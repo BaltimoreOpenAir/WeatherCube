@@ -244,9 +244,11 @@ void loop() {
   }
   // check that write was successful 
   loop_counter++ ;
-  Serial.println("counter number is now : "); 
-  Serial.println(loop_counter) ; 
+//  Serial.println("counter number is now : "); 
+//  Serial.println(loop_counter) ; 
   //----------------send data-----------------
+
+  // wifi_co
   //----------------deep sleep mode-----------------
 
   while (millis() - toc < READ_INTERVAL ) {
@@ -274,26 +276,30 @@ void write_data(int deviceaddress, unsigned int address )
     for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
       Serial.println(data_array[i]) ;
     }
-    Serial.println("data array in bytes is :");
-    for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
-      Serial.println( byte(data_array[i])) ;
-    }
+//    Serial.println("data array in bytes is :");
+//    for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
+//      Serial.println( byte(data_array[i])) ;
+//    }
   }
   else {
   }
-
-  Serial.println("Write size is: ");
-  Serial.println(DATA_ARRAY_SIZE);
+//
+//  Serial.println("Write size is: ");
+//  Serial.println(DATA_ARRAY_SIZE);
   Wire.beginTransmission(EEP0);
   Wire.write((int)(address >> 8));   // MSB
   Wire.write((int)(address & 0xFF)); //
   for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
-    byte value = byte(data_array[i]) ;
+    //byte value = byte(data_array[i]) ;
+    int value = data_array[i];
+
+    // check that value is positive and can fit into 2 bytes
+    
     // convert data into two bytes
     byte two = (value & 0xFF);
     byte one = ((value >> 8) & 0xFF);
     Wire.write(two);
-    address = address + 1;
+    //current_address = current_address + 1;
     // write second byte
     Wire.write(one);
   }
@@ -301,7 +307,7 @@ void write_data(int deviceaddress, unsigned int address )
 
   if (DEBUG_MODE == 1) {
     Serial.println("Attempted to write. Written values are : ") ;
-    for (int i = 64; i < 64 + DATA_ARRAY_SIZE * 2; i = i + 2) {
+    for (int i = address; i < address + DATA_ARRAY_SIZE*2; i = i + 2) {
       long two = readEEPROM(EEP0, i);
       long one = readEEPROM(EEP0, i + 1);
       //Serial.println(i);
