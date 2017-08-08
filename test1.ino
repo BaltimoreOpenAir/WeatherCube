@@ -60,6 +60,7 @@ void setup() {
   ddbClient.setDateTimeProvider(&dateTimeProvider);
   
   Serial.println("Posting test message 0");
+  
   post_0();                         
   memset(message, 0, sizeof(message));
 
@@ -193,5 +194,3 @@ void post_0(){
       break;
   }
 }
-
-
