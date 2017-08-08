@@ -25,8 +25,11 @@
 #define EEP1 0x51    //Address of 24LC256 eeprom chip
 
 #define ID_LOCATION 0 // where we save the id
-#define CHECK_SETUP_INDEX 2 // where we save the index indicating whether or not we've run the do_once setup functions, including setting id and setting clock
+#define CHECK_SETUP_INDEX 2 // where we save whether or not we've run the do_once setup functions, including setting id and setting clock
+#define CHECK_SEND_LOCATION 4// where we save if the data successfully send 
+#define DAYS_NOT_SENT_LOCATION 5// where we log number of days not sent, may be redundant 
 #define START_WRITE_LOCATION 64 // 2nd page 
+
 
 #define VDIV 5.02    //voltage divider: (1 + 4.02) / 1
 #define VREF 1.1
@@ -36,7 +39,6 @@
 #define FAN_EN 9
 
 #define VOLT A0
-
 // numeric code to index the array LMP91000
 #define CO    0
 #define EtOH  1
@@ -148,10 +150,6 @@ void setup() {
   //----------------initialize communications-----------------
   Wire.begin();
 
-  digitalWrite(7, HIGH);
-  delay(6000); 
-  digitalWrite(7, LOW); 
-  
   //Serial.begin(19200);
   Serial.println("test");
 
@@ -234,14 +232,14 @@ void loop() {
   //----------------take readings-----------------
 
   read_data(); //note: reads to data_array
+
   if (DEBUG_MODE == 1) {
     Serial.println("data array is : ");
     for (int i = 0; i < 14; i++) {
       Serial.println(data_array[i]) ;
     }
   }
-  else {
-  }
+
   //----------------write readings-----------------
   // note: need to save out gain and whatever else chris wants; 4 additional bytes
   if (loop_counter < 1600) {
@@ -257,10 +255,12 @@ void loop() {
   //  Serial.println("counter number is now : ");
   //  Serial.println(loop_counter) ;
 
-
-  //----------------send data-----------------
+  //----------------read the data from EEPROM and send to ESP-----------------
   int when_send = 3; // change for debug
   if (loop_counter > when_send) {
+    // turn on
+    digitalWrite(WIFI_EN, HIGH); // turn on the ESP
+    Serial.println(F("ESP ON"));
 
     // read data from EEPROM memory and put in array day_array
     int day_array[loop_counter * EEPROM_BLOCKSIZE];
@@ -270,23 +270,49 @@ void loop() {
       // append bit-shifted data
       day_array[i] =  ((two << 0) & 0xFF) + ((one << 8) & 0xFFFF);
     }
-    // turn on
-    digitalWrite(7, HIGH);
-    Serial.println(F("ESP ON"));
-    delay(6000);
-    // 
-    
-    // send day_array over serial to ESP
 
-    // listen 
+    long days_not_sent = readEEPROM(EEP0, DAYS_NOT_SENT_LOCATION);
+    delay(6000);
+    // send day_array over serial to ESP
     
-    // send 
-//    Serial.println("sending day_array");
-//      esp.write(day_array); 
-//      esp.flush();
-//
-//   Serial.println("day_array sent"); 
-    // listen for success message 
+    for (int i = 0; i < days_not_sent; i++) {
+        String s = "n";
+        for (int ii = i * EEPROM_BLOCKSIZE; ii < (i + 1)*EEPROM_BLOCKSIZE; ii++) { //(loop_counter * EEPROM_BLOCKSIZE + 1); ii++) {
+          s += day_array[ii];
+          s += ",";
+        }
+        s += "x";
+        char nbuf[ EEPROM_BLOCKSIZE * 2 + 2];
+        s.toCharArray(nbuf, 2 * EEPROM_BLOCKSIZE + 2);
+        // check if esp is available
+        if (esp.available()) {
+          // send the message, saved in nbuf, to the esp
+          esp.write(nbuf);
+          esp.flush();
+          delay(1000);
+          // read incoming message
+          char a = esp.read();
+          if (DEBUG_MODE) {
+            Serial.println(a);
+          }
+        }
+        // if we can't connect, save messages
+        else {
+          // save 0 to check send location to indicate that we didn't send the data
+          writeEEPROM(EEP0, CHECK_SEND_LOCATION, byte(0) );
+          // add a number to the number of days not sent
+          writeEEPROM(EEP0, DAYS_NOT_SENT_LOCATION, byte(days_not_sent + 1));
+        }
+      }
+        // listen
+    
+        // send
+    //    Serial.println("sending day_array");
+    //      esp.write(day_array);
+    //      esp.flush();
+    
+    //   Serial.println("day_array sent");
+    // listen for success message
 
     // while s
     // turn off
@@ -294,12 +320,12 @@ void loop() {
     digitalWrite(7, LOW);
     Serial.println(F("ESP OFF"));
 
-    // max_tries = 20 
-    boolean success = false; 
-    if (success== true){
-    loop_counter = 0;
+    // max_tries = 20
+    boolean success = false;
+    if (success == true) {
+      loop_counter = 0;
     }
-    else{
+    else {
     }
   }
   else {
@@ -362,7 +388,7 @@ void write_data(int deviceaddress, unsigned int address )
   Wire.endTransmission();
 
   if (DEBUG_MODE == 1) {
-   
+
     Serial.println("Attempted to write. Written values are : ") ;
     for (int i = address; i < address + DATA_ARRAY_SIZE * 2; i = i + 2) {
       long two = readEEPROM(EEP0, i);
