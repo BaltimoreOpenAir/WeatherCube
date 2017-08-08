@@ -6,7 +6,7 @@
 #define SO2   5
 #define H2S   6
 
-#define SERIAL_ID 0
+#define SERIAL_ID "0"
 #define NUMBER_SAVES_LOCATION 3 // location of byte where the number of saves is 
 #define POSTRATE 10000
 #define MAX_MESSAGE_LENGTH 25
@@ -25,13 +25,13 @@ const char* AWS_ENDPOINT = "amazonaws.com";
 // Init and connect Esp8266 WiFi to local wlan
 //const char* pSSID = "Samsung Galaxy S 5 3120"; // REPLACE with your network SSID (name)
 //const char* pPassword = "102867nola"; // REPLACE with your network password (use for WPA, or use as key for WEP)
-const char* pSSID = "[NETWORK_SSID]"; // REPLACE with your network SSID (name)
-const char* pPassword = "[NETWORK_PASSWORD]"; // REPLACE with your network password (use for WPA, or use as key for WEP)
+const char* pSSID = "passionatepurplepurpoise"; // REPLACE with your network SSID (name)
+const char* pPassword = "Misfits1807$"; // REPLACE with your network password (use for WPA, or use as key for WEP)
 
 // Constants describing DynamoDB table and values being used
 const char* TABLE_NAME = "ESP8266AWSDemo";
 const char* HASH_KEY_NAME = "id";
-const char* HASH_KEY_VALUE = "ESP01"; // Our sensor ID, to be REPLACED in case of multiple sensors.
+//const char* SERIAL_ID = "ESP01"; // Our sensor ID, to be REPLACED in case of multiple sensors.
 const char* RANGE_KEY_NAME = "timest";
 
 //for reading in serial streams
@@ -66,10 +66,16 @@ void setup() {
 
   //wait a short period for the wifi to connect
   //we'll take arguments from the atmega in the meantime if the connection process is slow
+  if (DEBUG_MODE) Serial.println("connecting to wifi"); 
   check_or_wait_for_wifi(1000);
+
+  if (DEBUG_MODE==1) {
+    Serial.println("posting test post..."); 
+    //post_0();
+  }
 }
 
-void initialize_wifi(){ //Initialize ddbClient.
+void initialize_wifi() { //Initialize ddbClient.
   ddbClient.setAWSRegion(AWS_REGION);
   ddbClient.setAWSEndpoint(AWS_ENDPOINT);
   ddbClient.setAWSSecretKey(awsSecKey);
@@ -79,10 +85,10 @@ void initialize_wifi(){ //Initialize ddbClient.
   //Serial.println("wifi initialized...");
 }
 
-bool check_or_wait_for_wifi(int max_wait_ms){
+bool check_or_wait_for_wifi(int max_wait_ms) {
   unsigned long timer = millis();
-  if(wifi_connected) return true;
-  while(millis() - timer < max_wait_ms){
+  if (wifi_connected) return true;
+  while (millis() - timer < max_wait_ms) {
     if (WiFi.status() == WL_CONNECTED) {
       wifi_connected = true;
       initialize_wifi();
@@ -99,7 +105,7 @@ void loop() {
 }
 
 
-void SerialCheck(){
+void SerialCheck() {
   if (Serial.available() > 0) { // something came across serial
     delay(10);
     inbyte = -1;
@@ -108,49 +114,48 @@ void SerialCheck(){
     while (inbyte != '\r' && inbyte != 'x' && counter < MAX_MESSAGE_LENGTH) {
       inbyte = Serial.read();
       delay(10);
-      if (inbyte == '\r' || inbyte == 'x'){
+      if (inbyte == '\r' || inbyte == 'x') {
         char mbuf[MAX_MESSAGE_LENGTH];
         //command example: [t 23.45x] to set temperature as 23.45C.
-        if(cbuf[0] == 't'){
+        if (cbuf[0] == 't') {
           setParameter(mbuf, TEMP, false);
         }
-        if(cbuf[0] == 'h'){
+        if (cbuf[0] == 'h') {
           setParameter(mbuf, HUM, false);
         }
-        if(cbuf[0] == 'b'){
+        if (cbuf[0] == 'b') {
           setParameter(mbuf, BATT, false);
         }
-        if(cbuf[0] == 'o'){
+        if (cbuf[0] == 'o') {
           setParameter(mbuf, O3, false);
         }
-        if(cbuf[0] == 'n'){
+        if (cbuf[0] == 'n') {
           setParameter(mbuf, NO2, false);
         }
-        if(cbuf[0] == 's'){
+        if (cbuf[0] == 's') {
           setParameter(mbuf, SO2, false);
         }
-        if(cbuf[0] == 'y'){
+        if (cbuf[0] == 'y') {
           setParameter(mbuf, H2S, false);
         }
-
-        else if(cbuf[0] == 'd'){
+        else if (cbuf[0] == 'd') {
           getDateTimeString();
         }
-        else if(cbuf[0] == 'p'){
-          if(check_or_wait_for_wifi(10000)){
-            if(!did_dummy_post){
+        else if (cbuf[0] == 'p') {
+          if (check_or_wait_for_wifi(10000)) {
+            if (!did_dummy_post) {
               postToAWS(did_dummy_post, false);
               did_dummy_post = true;
             }
             postToAWS(did_dummy_post, false);
-            }
-          else{
+          }
+          else {
             Serial.println("#E5");
           }
         }
       }
-      else if(inbyte == -1 || inbyte < 32 || inbyte > 126) continue;
-      else{
+      else if (inbyte == -1 || inbyte < 32 || inbyte > 126) continue;
+      else {
         cbuf[counter++] = inbyte;
       }
     }
@@ -159,19 +164,74 @@ void SerialCheck(){
 }
 
 //-------FUNCTIONS----------------
-void getDateTimeString(){
+void post_0(){ 
+   /* Create an Item. */
+  AttributeValue id;
+  id.setS(SERIAL_ID);
+  AttributeValue timest;
+  timest.setN(dateTimeProvider.getDateTime());
+
+  /* Create an AttributeValue for 'temp', convert the number to a
+     string (AttributeValue object represents numbers as strings), and
+     use setN to apply that value to the AttributeValue. */
+  char numberBuffer[4];
+  AttributeValue tempAttributeValue;
+  sprintf(numberBuffer, "%d", int(0));
+  tempAttributeValue.setN(numberBuffer);
+
+  /* Create the Key-value pairs and make an array of them. */
+  MinimalKeyValuePair < MinimalString, AttributeValue
+  > att1(HASH_KEY_NAME, id);
+  MinimalKeyValuePair < MinimalString, AttributeValue
+  > att2(RANGE_KEY_NAME, timest);
+  MinimalKeyValuePair < MinimalString, AttributeValue
+  > att3("temp", tempAttributeValue);
+  MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1,
+                                                                     att2, att3
+                                                                   };
+
+  /* Set values for putItemInput. */
+  putItemInput.setItem(MinimalMap < AttributeValue > (itemArray, 3));
+  putItemInput.setTableName(TABLE_NAME);
+
+  /* Perform putItem and check for errors. */
+  PutItemOutput putItemOutput = ddbClient.putItem(putItemInput,
+                                actionError);
+  switch (actionError) {
+    case NONE_ACTIONERROR:
+      Serial.println("PutItem succeeded!");
+      break;
+    case INVALID_REQUEST_ACTIONERROR:
+      Serial.print("ERROR: Invalid request");
+      Serial.println(putItemOutput.getErrorMessage().getCStr());
+      break;
+    case MISSING_REQUIRED_ARGS_ACTIONERROR:
+      Serial.println(
+        "ERROR: Required arguments were not set for PutItemInput");
+      break;
+    case RESPONSE_PARSING_ACTIONERROR:
+      Serial.println("ERROR: Problem parsing http response of PutItem");
+      break;
+    case CONNECTION_ACTIONERROR:
+      Serial.println("ERROR: Connection problem");
+      break;
+  }
+}
+void getDateTimeString() {
   Serial.println(dateTimeProvider.getDateTime());
 }
 
-void get_message(char m[], char c[]){
-  for(int i = 2; i < MAX_MESSAGE_LENGTH; i++){m[i-2] = c[i];}
+void get_message(char m[], char c[]) {
+  for (int i = 2; i < MAX_MESSAGE_LENGTH; i++) {
+    m[i - 2] = c[i];
+  }
 }
 
-void setParameter(char m[], int attribute_index, bool verboz){ //parse and set param value recognized in serial stream
+void setParameter(char m[], int attribute_index, bool verboz) { //parse and set param value recognized in serial stream
   get_message(m, cbuf);
   MinimalString ms = m;
   attributes[attribute_index].setS(ms);
-  if(verboz){
+  if (verboz) {
     Serial.print("set ");
     Serial.print(attributes_names[attribute_index]);
     Serial.print(": ");
@@ -179,18 +239,18 @@ void setParameter(char m[], int attribute_index, bool verboz){ //parse and set p
   }
 }
 
-void postToAWS(bool not_dummy, bool verboz){
+void postToAWS(bool not_dummy, bool verboz) {
 
   /* Create an Item. */
   AttributeValue id;
-  id.setS(HASH_KEY_VALUE);
+  id.setS(SERIAL_ID);
   AttributeValue timest;
   timest.setN(dateTimeProvider.getDateTime());
-  if(not_dummy && verboz){
+  if (not_dummy && verboz) {
     Serial.print("Attempting AWS post at ");
     Serial.println(dateTimeProvider.getDateTime());
   }
-    
+
   /* Create the Key-value pairs and make an array of them. */
   MinimalKeyValuePair <MinimalString, AttributeValue> att1(HASH_KEY_NAME, id);
   MinimalKeyValuePair <MinimalString, AttributeValue> att2(RANGE_KEY_NAME, timest);
@@ -201,7 +261,7 @@ void postToAWS(bool not_dummy, bool verboz){
   MinimalKeyValuePair <MinimalString, AttributeValue> att7(attributes_names[NO2], attributes[NO2]);
   MinimalKeyValuePair <MinimalString, AttributeValue> att8(attributes_names[SO2], attributes[SO2]);
   MinimalKeyValuePair <MinimalString, AttributeValue> att9(attributes_names[H2S], attributes[H2S]);
-  
+
   MinimalKeyValuePair <MinimalString, AttributeValue> itemArray[] = {att1, att2, att3, att4, att5, att6, att7, att8, att9};
 
   /* Set values for putItemInput. */
@@ -213,20 +273,20 @@ void postToAWS(bool not_dummy, bool verboz){
   switch (actionError) {
     //response codes simple, but unlikely to randomly occur in i/o stream, for atmega parsing
     case NONE_ACTIONERROR:
-      if(not_dummy) Serial.println("#S");
+      if (not_dummy) Serial.println("#S");
       break;
     case INVALID_REQUEST_ACTIONERROR:
-      if(not_dummy) Serial.println("#E1");//("ERROR: Invalid request");
+      if (not_dummy) Serial.println("#E1"); //("ERROR: Invalid request");
       //Serial.println(putItemOutput.getErrorMessage().getCStr());
       break;
     case MISSING_REQUIRED_ARGS_ACTIONERROR:
-      if(not_dummy) Serial.println("#E2");//("ERROR: Required arguments were not set for PutItemInput");
+      if (not_dummy) Serial.println("#E2"); //("ERROR: Required arguments were not set for PutItemInput");
       break;
     case RESPONSE_PARSING_ACTIONERROR:
-      if(not_dummy) Serial.println("#E3");//("ERROR: Problem parsing http response of PutItem");
+      if (not_dummy) Serial.println("#E3"); //("ERROR: Problem parsing http response of PutItem");
       break;
     case CONNECTION_ACTIONERROR:
-      if(not_dummy) Serial.println("#E4");//("ERROR: Connection problem");
+      if (not_dummy) Serial.println("#E4"); //("ERROR: Connection problem");
       break;
   }
   /* wait to not double-record */
