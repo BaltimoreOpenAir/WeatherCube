@@ -25,7 +25,9 @@
 #define EEP1 0x51    //Address of 24LC256 eeprom chip
 
 #define ID_LOCATION 0 // where we save the id
-#define CHECK_SETUP_INDEX 2 // where we save the index indicating whether or not we've run the do_once setup functions, including setting id and setting clock
+#define CHECK_SETUP_INDEX 2 // where we save whether or not we've run the do_once setup functions, including setting id and setting clock
+#define CHECK_SEND_LOCATION 4// where we save if the data successfully send 
+#define DAYS_NOT_SENT_LOCATION 5// where we log number of days not sent, may be redundant 
 #define START_WRITE_LOCATION 64 // 2nd page 
 
 #define VDIV 5.02    //voltage divider: (1 + 4.02) / 1
@@ -108,7 +110,7 @@ bool debug_run = false;
 int reading_location = 10;
 float data_array[DATA_ARRAY_SIZE];
 int loop_counter = 0;
-
+char a; //
 
 //----------------CODE----------------
 
@@ -128,7 +130,7 @@ void do_once() { // do at least once, but not all the time
 
 
   if (DEBUG_MODE == 1) {
-    //Serial.begin(19200);
+    Serial.begin(19200);
     Serial.println("setup:");
     Serial.println(readEEPROM(EEP0, ID_LOCATION), DEC);
     delay(10);
@@ -139,6 +141,10 @@ void do_once() { // do at least once, but not all the time
   else {
   }
   // set gain & save to EEprom
+
+  // say that we haven't sent data yet
+  // maybe change to 1 so that it automatically sends back the data?
+  writeEEPROM(EEP0, DAYS_NOT_SENT_LOCATION, 0);
 }
 
 
@@ -149,10 +155,10 @@ void setup() {
   Wire.begin();
 
   digitalWrite(7, HIGH);
-  delay(6000); 
-  digitalWrite(7, LOW); 
-  
-  //Serial.begin(19200);
+  delay(6000);
+  digitalWrite(7, LOW);
+
+  Serial.begin(19200);
   Serial.println("test");
 
   // put your setup code here, to run once:
@@ -254,63 +260,84 @@ void loop() {
   loop_counter++ ;
   delay(50);
 
-  //  Serial.println("counter number is now : ");
-  //  Serial.println(loop_counter) ;
-
-
   //----------------send data-----------------
-  int when_send = 3; // change for debug
+  int when_send;
+  if (DEBUG_MODE) {
+    when_send = 2; // in debug mode, send after two loops
+  }
+  else {
+    when_send = 24 * 6; // in real mode, send after a day readings every ten minute
+  }
+
+  // change for debug
+  // if time = 12 + SERIAL_ID
+
+  int days_not_sent = readEEPROM(EEP0, DAYS_NOT_SENT_LOCATION);
   if (loop_counter > when_send) {
 
     // read data from EEPROM memory and put in array day_array
-    int day_array[loop_counter * EEPROM_BLOCKSIZE];
-    for (int i = 0; i < loop_counter * EEPROM_BLOCKSIZE; i = i + 2) {
+    int day_array[loop_counter * EEPROM_BLOCKSIZE * days_not_sent];
+    for (int i = 0; i < loop_counter * EEPROM_BLOCKSIZE * days_not_sent; i = i + 2) {
       long two = readEEPROM(EEP0, 64 + i);
       long one = readEEPROM(EEP0, 64 + i + 1);
       // append bit-shifted data
       day_array[i] =  ((two << 0) & 0xFF) + ((one << 8) & 0xFFFF);
     }
     // turn on
-    digitalWrite(7, HIGH);
+    digitalWrite(WIFI_EN, HIGH);
     Serial.println(F("ESP ON"));
-    delay(6000);
-    // 
-    
+    delay(5000);
+    //
+
     // send day_array over serial to ESP
-
-    // listen 
+    //   char nbuf[10], obuf[10], ibuf[10];
     
-    // send 
-//    Serial.println("sending day_array");
-//      esp.write(day_array); 
-//      esp.flush();
-//
-//   Serial.println("day_array sent"); 
-    // listen for success message 
+    // loop over every day's data
+    for (int i = 0; i < days_not_sent; i++) {
+      String s = "n";
+      
+      for (int ii = i*EEPROM_BLOCKSIZE; ii <(i+1)*EEPROM_BLOCKSIZE; ii++){ //(loop_counter * EEPROM_BLOCKSIZE + 1); ii++) {
+        s += day_array[ii];
+        s += ",";
+      }
+      char nbuf[loop_counter * EEPROM_BLOCKSIZE + 1];
+      s.toCharArray(nbuf, loop_counter * EEPROM_BLOCKSIZE + 1);
 
-    // while s
-    // turn off
-    delay(100);
-    digitalWrite(7, LOW);
-    Serial.println(F("ESP OFF"));
+      if (esp.available()) {
+        esp.write(nbuf);
+        esp.flush();
+        esp.write("AR");
+        esp.flush();
+        delay(1000);
 
-    // max_tries = 20 
-    boolean success = false; 
-    if (success== true){
-    loop_counter = 0;
+        a = esp.read();
+        if (DEBUG_MODE){
+          Serial.println(a); 
+        }
+
+      }
+    else {
+      writeEEPROM(EEP0, CHECK_SEND_LOCATION, byte(0) );
+      readEEPROM(EEP0, DAYS_NOT_SENT_LOCATION, byte(days_not_sent + 1));
     }
-    else{
-    }
   }
-  else {
-  }
-  // wifi_co
-  //----------------deep sleep mode-----------------
 
-  while (millis() - toc < READ_INTERVAL ) {
-    ;
-    delay(500);
-  }
+  delay(100);
+  digitalWrite(7, LOW);
+  Serial.println(F("ESP OFF"));
+}
+else {
+}
+// wifi_co
+//----------------deep sleep mode-----------------
+
+while (millis() - toc < READ_INTERVAL ) {
+  ;
+  delay(500);
+}
+Serial.begin(19200);
+Serial.println("What was read was...");
+Serial.println(a);
 }
 
 //----------------FUNCTIONS-----------------
@@ -362,7 +389,7 @@ void write_data(int deviceaddress, unsigned int address )
   Wire.endTransmission();
 
   if (DEBUG_MODE == 1) {
-   
+
     Serial.println("Attempted to write. Written values are : ") ;
     for (int i = address; i < address + DATA_ARRAY_SIZE * 2; i = i + 2) {
       long two = readEEPROM(EEP0, i);
