@@ -92,6 +92,7 @@ Statistic stat3;
 
 char inbyte;
 //byte cbuf[MAX_MESSAGE_LENGTH];
+char* test;
 
 long post_index = 0;
 bool running_fan = true;
@@ -150,7 +151,7 @@ void setup() {
   //----------------initialize communications-----------------
   Wire.begin();
 
-  //Serial.begin(19200);
+  Serial.begin(19200);
   Serial.println("test");
 
   // put your setup code here, to run once:
@@ -256,91 +257,127 @@ void loop() {
   //  Serial.println(loop_counter) ;
 
   //----------------read the data from EEPROM and send to ESP-----------------
-  int when_send = 3; // change for debug
-  if (loop_counter > when_send) {
-    // turn on
-    digitalWrite(WIFI_EN, HIGH); // turn on the ESP
-    Serial.println(F("ESP ON"));
-
-    // read data from EEPROM memory and put in array day_array
-    int day_array[loop_counter * EEPROM_BLOCKSIZE];
-    for (int i = 0; i < loop_counter * EEPROM_BLOCKSIZE; i = i + 2) {
-      long two = readEEPROM(EEP0, 64 + i);
-      long one = readEEPROM(EEP0, 64 + i + 1);
-      // append bit-shifted data
-      day_array[i] =  ((two << 0) & 0xFF) + ((one << 8) & 0xFFFF);
-    }
-
-    long days_not_sent = readEEPROM(EEP0, DAYS_NOT_SENT_LOCATION);
-    delay(6000);
-    // send day_array over serial to ESP
-    
-    for (int i = 0; i < days_not_sent; i++) {
-        String s = "n";
-        for (int ii = i * EEPROM_BLOCKSIZE; ii < (i + 1)*EEPROM_BLOCKSIZE; ii++) { //(loop_counter * EEPROM_BLOCKSIZE + 1); ii++) {
-          s += day_array[ii];
-          s += ",";
-        }
-        s += "x";
-        char nbuf[ EEPROM_BLOCKSIZE * 2 + 2];
-        s.toCharArray(nbuf, 2 * EEPROM_BLOCKSIZE + 2);
-        // check if esp is available
-        if (esp.available()) {
-          // send the message, saved in nbuf, to the esp
-          esp.write(nbuf);
-          esp.flush();
-          delay(1000);
-          // read incoming message
-          char a = esp.read();
-          if (DEBUG_MODE) {
-            Serial.println(a);
-          }
-        }
-        // if we can't connect, save messages
-        else {
-          // save 0 to check send location to indicate that we didn't send the data
-          writeEEPROM(EEP0, CHECK_SEND_LOCATION, byte(0) );
-          // add a number to the number of days not sent
-          writeEEPROM(EEP0, DAYS_NOT_SENT_LOCATION, byte(days_not_sent + 1));
-        }
+  test = {"t55xh5.22x"}; 
+  digitalWrite(WIFI_EN, HIGH);
+  Serial.println("Wifi on!"); 
+  delay(500); 
+  esp.begin(9600); 
+  delay(1000); 
+  
+  if (esp.available()){
+    Serial.println("ESP available!"); 
+    while (esp.available()){
+      for (int i = 0; i < 4; i++){
+      esp.write(test);
+      delay(50); 
       }
-        // listen
-    
-        // send
-    //    Serial.println("sending day_array");
-    //      esp.write(day_array);
-    //      esp.flush();
-    
-    //   Serial.println("day_array sent");
-    // listen for success message
-
-    // while s
-    // turn off
-    delay(100);
-    digitalWrite(7, LOW);
-    Serial.println(F("ESP OFF"));
-
-    // max_tries = 20
-    boolean success = false;
-    if (success == true) {
-      loop_counter = 0;
+      delay(500); 
+      esp.flush(); 
     }
-    else {
-    }
+    Serial.println("Sent ESP the following message:"); 
+    Serial.println(test); 
+
+    delay(5000); 
   }
-  else {
-  }
+    digitalWrite(WIFI_EN, LOW);
+//  int when_send = 24 * 6;
+//  if (DEBUG_MODE == 1) {
+//    when_send = 3;
+//  }
+//  // if we have more then
+//  if (loop_counter > when_send) {
+//    boolean sending_success = false;
+//    int max_tries = 0;
+//    while (sending_success = false && max_tries < 20) {
+//      // turn on
+//      digitalWrite(WIFI_EN, HIGH); // turn on the ESP
+//      Serial.println(F("ESP ON"));
+//      esp.begin(9600); 
+//      // read data from EEPROM memory and put in array day_array
+//      int day_array[loop_counter * EEPROM_BLOCKSIZE];
+//      read_double();
+//      // send data
+//      data_send(day_array);
+//      //
+//      max_tries ++;
+//      char a = esp.read();
+//      if (a = 1) {
+//        sending_success = true;
+//      }
+//      else {
+//        delay(500);
+//      }
+//    }
+//
+//    digitalWrite(WIFI_EN, LOW);
+//    Serial.println(F("ESP OFF"));
+//    // max_tries = 20
+//    boolean success = false;
+//    if (success == true) {
+//    }
+//  }
+//  else {
+//  }
   // wifi_co
   //----------------deep sleep mode-----------------
 
   while (millis() - toc < READ_INTERVAL ) {
     ;
     delay(500);
+    // deep sleep 
   }
 }
 
 //----------------FUNCTIONS-----------------
+// read double data
+void read_double() {
+  int day_array[loop_counter * EEPROM_BLOCKSIZE];
+  for (int i = 0; i < loop_counter * EEPROM_BLOCKSIZE; i = i + 2) {
+    long two = readEEPROM(EEP0, 64 + i);
+    long one = readEEPROM(EEP0, 64 + i + 1);
+    // append bit-shifted data
+    day_array[i] =  ((two << 0) & 0xFF) + ((one << 8) & 0xFFFF);
+  }
+  //return day_array;
+}
+// send
+void data_send(int alldays[]) {
+  long days_not_sent = readEEPROM(EEP0, DAYS_NOT_SENT_LOCATION);
+  delay(6000);
+  // send day_array over serial to ESP
+  // decleare the letters to be sent first as a character array
+  if (esp.available()){
+  char sensor_codes[7] = "thbonsy";
+  for (int i = 0; i < days_not_sent; i++) {
+    int one_day[7];
+    int iii = 0; 
+    for (int ii = i*7; ii < (i+1)*7; ii++) {
+      one_day[iii] = alldays[ii];
+      iii++; }
 
+    for (int ii = 0; ii < 7; ii++ ) {
+      // compose message to be sent
+      String s;
+      s += sensor_codes[ii];
+      s += one_day[ii];
+      s += "x";
+      char nbuf[4]; 
+
+      // send message 
+      s.toCharArray(nbuf, 4); 
+      Serial.println(nbuf); 
+      delay(500); 
+    }
+  }
+  }
+    // if we can't connect, save messages
+  else {
+//    // save 0 to check send location to indicate that we didn't send the data
+    writeEEPROM(EEP0, CHECK_SEND_LOCATION, byte(0) );
+//    // add a number to the number of days not sent
+    writeEEPROM(EEP0, DAYS_NOT_SENT_LOCATION, byte(days_not_sent + 1));
+  }
+}
 //write
 void write_data(int deviceaddress, unsigned int address )
 {
