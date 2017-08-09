@@ -142,6 +142,9 @@ void do_once() { // do at least once, but not all the time
   else {
   }
   // set gain & save to EEprom
+
+  // OTHER SETUP 
+ 
 }
 
 
@@ -176,7 +179,8 @@ void setup() {
   }
   else {
   }
-
+  // set number of days for which data not sent to 3, will trigger backup send
+   writeEEPROM(EEP0,DAYS_NOT_SENT_LOCATION, 3); 
   //----------------turn things on/pin stuff -----------------
   //----------------pin stuff-----------------
   // define which way pins work and turn on/off
@@ -257,57 +261,66 @@ void loop() {
   //  Serial.println(loop_counter) ;
 
   //----------------read the data from EEPROM and send to ESP-----------------
-  test = {"t55xh5.22x"}; 
-  digitalWrite(WIFI_EN, HIGH);
-  Serial.println("Wifi on!"); 
-  delay(500); 
-  esp.begin(9600); 
-  delay(1000); 
-  
-  if (esp.available()){
-    Serial.println("ESP available!"); 
-    while (esp.available()){
-      for (int i = 0; i < 4; i++){
-      esp.write(test);
-      delay(50); 
-      }
-      delay(500); 
-      esp.flush(); 
-    }
-    Serial.println("Sent ESP the following message:"); 
-    Serial.println(test); 
-
-    delay(5000); 
-  }
-    digitalWrite(WIFI_EN, LOW);
-//  int when_send = 24 * 6;
-//  if (DEBUG_MODE == 1) {
-//    when_send = 3;
+  read_double();
+// send dummy data 
+//  test = {"t55xh5.22x"}; 
+//  digitalWrite(WIFI_EN, HIGH);
+//  Serial.println("Wifi on!"); 
+//  delay(500); 
+//  esp.begin(9600); 
+//  delay(1000); 
+//  
+//  if (esp.available()){
+//    Serial.println("ESP available!"); 
+//    while (esp.available()){
+//      for (int i = 0; i < 4; i++){
+//      esp.write(test);
+//      delay(50); 
+//      }
+//      delay(500); 
+//      esp.flush(); 
+//    }
+//    Serial.println("Sent ESP the following message:"); 
+//    Serial.println(test); 
+//
+//    delay(5000); 
 //  }
-//  // if we have more then
-//  if (loop_counter > when_send) {
+//    digitalWrite(WIFI_EN, LOW);
+// end send dummy data 
+  int when_send;
+  if (DEBUG_MODE == 1) {
+    when_send = 3;
+  }
+  else{
+    when_send  = 24 * 6;
+  }
+  // if we have more then
+  if (loop_counter > when_send) {
+    Serial.println("Preparing to send data..."); 
 //    boolean sending_success = false;
 //    int max_tries = 0;
 //    while (sending_success = false && max_tries < 20) {
 //      // turn on
-//      digitalWrite(WIFI_EN, HIGH); // turn on the ESP
-//      Serial.println(F("ESP ON"));
-//      esp.begin(9600); 
-//      // read data from EEPROM memory and put in array day_array
-//      int day_array[loop_counter * EEPROM_BLOCKSIZE];
-//      read_double();
-//      // send data
-//      data_send(day_array);
-//      //
-//      max_tries ++;
-//      char a = esp.read();
+      digitalWrite(WIFI_EN, HIGH); // turn on the ESP
+      Serial.println(F("ESP ON"));
+      delay(1000); 
+      esp.begin(9600); 
+      // read data from EEPROM memory and put in array day_array
+      int day_array[loop_counter * EEPROM_BLOCKSIZE];
+      read_double();
+      // send data
+      data_send(day_array);
+      //
+      //max_tries ++;
+      //char a = esp.read();
 //      if (a = 1) {
 //        sending_success = true;
 //      }
 //      else {
 //        delay(500);
 //      }
-//    }
+    }
+  //}
 //
 //    digitalWrite(WIFI_EN, LOW);
 //    Serial.println(F("ESP OFF"));
@@ -326,6 +339,7 @@ void loop() {
     delay(500);
     // deep sleep 
   }
+  loop_counter++; 
 }
 
 //----------------FUNCTIONS-----------------
@@ -343,7 +357,7 @@ void read_double() {
 // send
 void data_send(int alldays[]) {
   long days_not_sent = readEEPROM(EEP0, DAYS_NOT_SENT_LOCATION);
-  delay(6000);
+  delay(2000);
   // send day_array over serial to ESP
   // decleare the letters to be sent first as a character array
   if (esp.available()){
@@ -364,7 +378,8 @@ void data_send(int alldays[]) {
       char nbuf[4]; 
 
       // send message 
-      s.toCharArray(nbuf, 4); 
+      s.toCharArray(nbuf, 4);
+      esp.write(nbuf) ; 
       Serial.println(nbuf); 
       delay(500); 
     }
