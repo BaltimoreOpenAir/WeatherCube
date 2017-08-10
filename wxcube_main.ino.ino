@@ -111,7 +111,7 @@ bool debug_run = false;
 int reading_location = 10;
 float data_array[DATA_ARRAY_SIZE];
 int loop_counter = 0;
-
+int loop_minimum = 2;
 
 //
 //#include <SoftwareSerial.h>
@@ -281,7 +281,7 @@ void setup()
 }
 
 void loop() // run over and over
-{ long toc = millis(); 
+{ long toc = millis();
   digitalWrite(WIFI_EN, LOW);
   //----------------fan on-----------------
   digitalWrite(FAN_EN, HIGH);  delay(FAN_INTERVAL);
@@ -290,27 +290,42 @@ void loop() // run over and over
   ////-----------take readings------------------
 
   read_data(); // note: updates data_array
+  // sensor 1, sensor 2, sensor 3, sensor4, temp, rh, temp, rh temp, rh, 
+  
+  // note: have 4 more bytes, maybe can add timestamp?
   Serial.println("Data taken is...");
   for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
     Serial.println(data_array[i / 2]);
   }
   //long data = data_array;
   //long data[6] = {145.2, 3.45, 5.2, 350.0, 405.0}; // t, h, battery, o, n, s, h
+  char types[DATA_ARRAY_SIZE] = {"oonnsshhtrtrtr"}; 
   ////-----------save readings------------------
+  Serial.println("Writing data");
   for (int i = 0; i < DATA_ARRAY_SIZE * 2; i += 2) {
-    writeEEPROMdouble(EEP0, 64 + i + loop_counter * 32, data_array[i / 2]);
+    writeEEPROMdouble(EEP0, 64 + i + loop_counter * 32, (data_array[i / 2] + 32768)); // note: save as signed integer
   }
 
-  if (loop_counter > 6 * 24) {
-    ////-----------send readings------------------
-    for (int reading_counter = 0; reading_counter < loop_counter; reading_counter++) {
+ 
+if (DEBUG_MODE==1){
+  loop_minimum = 6*24;
+}
+else{
+  loop_minimum = 2; 
+}
+  if (loop_counter > 2){ //loop_minimum) {
+    ////-----------pull readings------------------
+    for (int reading_counter = 0; reading_counter < loop_counter + 1; reading_counter++) {
       //// first pull from EEPROM
-      Serial.println("EEPROM says...");
+      Serial.println("Reading from EEPROM...");
       long one_reading_array[EEPROM_BLOCKSIZE];
       for (int i = 0; i < DATA_ARRAY_SIZE * 2; i += 2) {
-        one_reading_array[i] = readEEPROMdouble(EEP0,  64 + i + loop_counter * 32);
+        byte two_e = readEEPROM(EEP0, 64 + i + loop_counter * 32);
+        byte one_e = readEEPROM(EEP0, 64 + i + loop_counter * 32 + 1);
+        one_reading_array[i / 2] = ((two_e << 0) & 0xFF) + ((one_e << 8) & 0xFFFF) - 32768; //readEEPROMdouble(EEP0,  64 + i + loop_counter * 32);
       }
-      digitalWrite(WIFI_EN, LOW);
+      // turn on wifi 
+      digitalWrite(WIFI_EN, HIGH);
       delay(5000);
       //// check serial messages
       if (mySerial.available()) {
@@ -326,11 +341,12 @@ void loop() // run over and over
       //String s = "hello";
       String s = "";
       //s += L;
-      for (int i = i; i < 5; i++) {
+      for (int i = 0; i < MAX_MESSAGE_LENGTH; i++) {
+        s+= types[i]; 
         s += String(one_reading_array[i]);
       }
       s += "x";
-      s.toCharArray(cbuf, 25);
+      s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
       Serial.println(s);
       mySerial.write(cbuf);
       mySerial.flush();
@@ -341,10 +357,10 @@ void loop() // run over and over
   }
   loop_counter ++;
 
-   while (millis() - toc < READ_INTERVAL ) {
+  while (millis() - toc < READ_INTERVAL ) {
     ;
     delay(500);
-    // deep sleep 
+    // deep sleep
   }
 
   Serial.println("Looping");
