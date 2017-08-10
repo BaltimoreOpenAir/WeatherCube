@@ -63,7 +63,7 @@ int loop_counter = 0;
 #define EEPROM_BLOCKSIZE 32
 #define TOTAL_MEASUREMENTS
 
-
+//int loop_counter = 0;
 void setup()
 { //----------------pin stuff-----------------
   // define which way pins work and turn on/off
@@ -83,51 +83,52 @@ void setup()
   digitalWrite(FAN_EN, LOW);
   pinMode(WIFI_EN, OUTPUT);
   digitalWrite(WIFI_EN, HIGH);
+  delay(1000); 
   Serial.begin(57600);
   mySerial.begin(9600);
   Wire.begin();
   // make dummy data to send
-  for (int i = 64; i < 64 * 5; i++) {
-    writeEEPROM(EEP0, i, 5 );
+  long input[6] = {145.2, 3.45, 5.2, 350.0, 405.0};
+  for (int i = 0; i < 6; i++) {
+    writeEEPROMdouble(EEP0, 64 + 2 * i, input[i]);
   }
   Serial.println("setup completed");
+
+
 }
 
 void loop() // run over and over
 {
+  ////-----------take readings------------------
+
+
+  ////-----------save readings------------------
+
+  // add: if loop_counter > X...
+  ////-----------send readings------------------
+  //// first pull from EEPROM
   Serial.println("EEPROM says...");
-  long one_day_array[MAX_MESSAGE_LENGTH];
-  for (int i = 64; i < MAX_MESSAGE_LENGTH + 64; i++) {
-    //  Serial.print(readEEPROM(EEP0, i ));
-    one_day_array[i - 64] = readEEPROM(EEP0, i );
+  long one_day_array[EEPROM_BLOCKSIZE];
+  for (int i = 0; i < loop_counter * EEPROM_BLOCKSIZE; i = i + 2) {
+    one_day_array[i] = readEEPROMdouble(EEP0, 64 + i);
   }
   
-  send_data(one_day_array);
-
-}
-
-////-----------FUNCTIONS------------------
-void send_data(long one_day_array) {
-  long day_array[MAX_MESSAGE_LENGTH];
-  for (int i = 64; i < MAX_MESSAGE_LENGTH + 64; i++) {
-    //  Serial.print(readEEPROM(EEP0, i ));
-    day_array[i - 64] = readEEPROM(EEP0, i );
-  }
-
+  //// check serial messages
   if (mySerial.available()) {
     while (mySerial.available()) {
       Serial.write(mySerial.read());
     }
   }
+    //// send data to AWS
 
   long L = millis();
-  Serial.println(L);
+  //Serial.println(L);
   char cbuf[25];
   //String s = "hello";
   String s = "";
   //s += L;
   for (int i = i; i < 5; i++) {
-    s += String(day_array[i]);
+    s += String(one_day_array[i]);
   }
   s += "x";
   s.toCharArray(cbuf, 25);
@@ -135,15 +136,39 @@ void send_data(long one_day_array) {
   mySerial.write(cbuf);
   mySerial.flush();
   delay(800);
+
+  
+  loop_counter ++;
+
+  // add: wifi low
+  Serial.println("Looping"); 
 }
-void read_double() {
-  int day_array[loop_counter * EEPROM_BLOCKSIZE];
-  for (int i = 0; i < loop_counter * EEPROM_BLOCKSIZE; i = i + 2) {
-    long two = readEEPROM(EEP0, 64 + i);
-    long one = readEEPROM(EEP0, 64 + i + 1);
-    // append bit-shifted data
-    day_array[i] =  ((two << 0) & 0xFF) + ((one << 8) & 0xFFFF);
-  }
+
+//----------------FUNCTIONS----------------------
+long writeEEPROMdouble(int deviceaddress, unsigned int eeaddress, int value)
+{
+  //    int value = input[i];
+  //    int address = 64 + 2 * i;
+  byte two = (value & 0xFF);
+  byte one = ((value >> 8) & 0xFF);
+  Wire.beginTransmission(deviceaddress);
+  Wire.write((int)(eeaddress >> 8));   // MSB
+  Wire.write((int)(eeaddress & 0xFF)); // LSB
+  // write 2nd bit
+  Wire.write(two);
+  // write first byte
+  Wire.write(one);
+  Wire.endTransmission();
+  delay(50);
+}
+
+byte readEEPROMdouble(int deviceaddress, unsigned int eeaddress )
+{
+  long two = readEEPROM(deviceaddress, eeaddress);
+  long one = readEEPROM(deviceaddress, eeaddress + 1);
+  //    // append bit-shifted data
+  int output =  ((two << 0) & 0xFF) + ((one << 8) & 0xFFFF);
+  return output;
 }
 
 byte readEEPROM(int deviceaddress, unsigned int eeaddress )
