@@ -71,20 +71,26 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Trying to post string");
-  long L = millis();
-  Serial.println(L);
+  //  Serial.println("Trying to post string");
+  //  long L = millis();
+  //  Serial.println(L);
+  //  char cbuf[25];
+  //  String s = "hello";
+  //  s += L;
+  //  s += "x";
+  //  //for (int i=0; i< 25; i++){ s+= test[i];}
+  //  s.toCharArray(cbuf,25);
+  //
+  //  post_str("posting ");
+  //  post_str(cbuf) ;
+  char* t = {"yes"};
+  Serial.println("posting"); 
+  Serial.print(t); 
+  post_str(t);
+
+  Serial.println(""); 
+
   char cbuf[25];
-  String s = "hello";
-  s += L;
-  s += "x";
-  //for (int i=0; i< 25; i++){ s+= test[i];}
-  s.toCharArray(cbuf,25); 
-  
-  post_str("posting ");
-  post_str(cbuf) ; 
-  
- // char cbuf[25];
   if (Serial.available() > 0) { // something came across serial
     delay(10);
     inbyte = -1;
@@ -102,8 +108,9 @@ void loop() {
       else if (inbyte == '\r' || inbyte == 'x') {
         Serial.print("you said: ");
         Serial.println(s);
-        s.toCharArray(cbuf,25); 
+        s.toCharArray(cbuf, 25);
         post_str(cbuf);
+        Serial.println("posted ");
       }
       else {
         s = s + inbyte;
@@ -139,9 +146,10 @@ void post_str(char* input_message) {
   /* Create an AttributeValue for 'temp', convert the number to a
      string (AttributeValue object represents numbers as strings), and
      use setN to apply that value to the AttributeValue. */
-  char numberBuffer[4];
+  char numberBuffer[MAX_MESSAGE_LENGTH];
   AttributeValue tempAttributeValue;
-  MinimalString msg = input_message;
+  MinimalString msg = input_message;  //input_message;
+  //for (int i=0; i< MAX_MESSAGE_LENGTH; i++){ msg+=input_message[i];}
   tempAttributeValue.setS(msg);
 
   /* Create the Key-value pairs and make an array of them. */

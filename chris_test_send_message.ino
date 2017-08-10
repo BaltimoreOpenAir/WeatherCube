@@ -14,8 +14,8 @@ void setup()
 }
 
 void loop() // run over and over
-{//test = {"t103h217x"};
-test = {"hello"}; 
+{test = {"t103h217x"};
+//test = {"hello"}; 
   if (mySerial.available()){
     while (mySerial.available()){
       Serial.write(mySerial.read());
@@ -27,17 +27,21 @@ test = {"hello"};
 //      mySerial.write(test);   
 //    }
 //  }
+
   long L = millis();
   Serial.println(L);
   char cbuf[25];
-  String s = "hello";
-  s += L;
-  s += "x";
-  //for (int i=0; i< 25; i++){ s+= test[i];}
+  //String s = "hello";
+  String s = ""; 
+  //s += L;
+  //s += "x";
+  for (int i=0; i< 25; i++){ s+= test[i];}
   s.toCharArray(cbuf,25); 
   mySerial.write(cbuf);
   mySerial.flush();
   delay(800);
+
+  // instead, 
 
  
 }
