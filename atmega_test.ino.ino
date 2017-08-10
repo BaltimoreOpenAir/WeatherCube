@@ -4,11 +4,11 @@
 
 #define WIFI_EN 8
 SoftwareSerial mySerial(5, 6); // RX, TX
-char* test;
+
 
 
 // adding after working
-int loop_counter = 0;
+
 #define SERIAL_ID 0
 #define DEBUG_MODE 1
 // # define INITIAL_DATE
@@ -64,6 +64,10 @@ int loop_counter = 0;
 #define TOTAL_MEASUREMENTS
 
 //int loop_counter = 0;
+
+int loop_counter = 0;
+char* test;
+
 void setup()
 { //----------------pin stuff-----------------
   // define which way pins work and turn on/off
@@ -101,9 +105,11 @@ void loop() // run over and over
 {
   ////-----------take readings------------------
 
-
+  long data[6] = {145.2, 3.45, 5.2, 350.0, 405.0}; // t, h, battery, o, n, s, h 
   ////-----------save readings------------------
-
+  for (int i = 0; i < 32; i++) {
+    writeEEPROMdouble(EEP0, 64 + 2 * i + loop_counter*32, data[i]);
+  }
   // add: if loop_counter > X...
   ////-----------send readings------------------
   //// first pull from EEPROM
