@@ -17,7 +17,7 @@
 
 //--------------- definitions-----------------
 #define FAN_INTERVAL 6000
-#define READ_INTERVAL 100
+#define READ_INTERVAL 100000
 #define RTC_ADDR 0x6F
 #define RTC_TS_BITS 7
 #define TIME_REG 0x00
@@ -239,7 +239,7 @@ void loop() // run over and over
   else {
     loop_minimum = 2;
   }
-  if (loop_counter > 1) { //loop_minimum) {
+  if (loop_counter > 6 * 24) { //loop_minimum) {
     ////-----------pull readings------------------
     for (int reading_counter = 0; reading_counter < loop_counter + 1; reading_counter++) {
       //// first pull from EEPROM
@@ -292,13 +292,16 @@ void loop() // run over and over
     }
     // add: wifi low
     digitalWrite(WIFI_EN, LOW);
+    loop_counter = 0; 
   }
-  loop_counter ++;
+  else{
+    loop_counter ++;
+  }
 
-  //  while (millis() - toc < READ_INTERVAL ) {
-  //    delay(500);
-  //    // deep sleep
-  //  }
+    while (millis() - toc < READ_INTERVAL ) {
+      delay(1000);
+      // deep sleep
+    }
 
   Serial.println("Looping");
 }
