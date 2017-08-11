@@ -1,13 +1,13 @@
 // ESP
-#define MAX_MESSAGE_LENGTH 6
+#define MAX_MESSAGE_LENGTH 60
 #include <ESP8266WiFi.h>
 #include "Esp8266AWSImplementations.h"
 #include "AmazonDynamoDBClient.h"
 #include "AWSFoundationalTypes.h"
 #include "keys.h"
 
-#define SERIAL_ID "0"
-#define MAX_MESSAGE_LENGTH 25
+//#define SERIAL_ID "0"
+#define MAX_MESSAGE_LENGTH 60
 char inbyte;
 char cbuf[MAX_MESSAGE_LENGTH];
 
@@ -26,8 +26,8 @@ const char* AWS_ENDPOINT = "amazonaws.com";
 // Init and connect Esp8266 WiFi to local wlan
 //const char* pSSID = "Samsung Galaxy S 5 3120"; // REPLACE with your network SSID (name)
 //const char* pPassword = "102867nola"; // REPLACE with your network password (use for WPA, or use as key for WEP)
-const char* pSSID = "passionatepurplepurpoise"; // REPLACE with your network SSID (name)
-const char* pPassword = "Misfits1807$"; // REPLACE with your network password (use for WPA, or use as key for WEP)
+//const char* pSSID = "passionatepurplepurpoise"; // REPLACE with your network SSID (name)
+//const char* pPassword = "Misfits1807$"; // REPLACE with your network password (use for WPA, or use as key for WEP)
 
 // Constants describing DynamoDB table and values being used
 const char* TABLE_NAME = "ESP8266AWSDemo";
@@ -54,7 +54,7 @@ void setup() {
     Serial.print("Not connected. ");
     delay(900);
   }
-
+  Serial.println("Connected!") ; 
   /* Initialize ddbClient. */
   ddbClient.setAWSRegion(AWS_REGION);
   ddbClient.setAWSEndpoint(AWS_ENDPOINT);
@@ -83,14 +83,14 @@ void loop() {
   //
   //  post_str("posting ");
   //  post_str(cbuf) ;
-  //char* t = {"yes"};
-  //Serial.println("posting"); 
+  char* t = {"yes"};
+  Serial.println("posting"); 
   //Serial.print(t); 
   //post_str(t);
 
   Serial.println(""); 
 
-  char cbuf[25];
+  char cbuf[MAX_MESSAGE_LENGTH];
   if (Serial.available() > 0) { // something came across serial
     delay(10);
     inbyte = -1;

@@ -13,10 +13,11 @@
 #include "ClosedCube_HDC1080.h"
 #include "Adafruit_SHT31.h"
 #include <EEPROM.h>
+//#include "keys.h" // wifi passwords, amazon table details, serial id
 
 //--------------- definitions-----------------
 #define FAN_INTERVAL 6000
-#define READ_INTERVAL 100000
+#define READ_INTERVAL 100
 #define RTC_ADDR 0x6F
 #define RTC_TS_BITS 7
 #define TIME_REG 0x00
@@ -113,120 +114,37 @@ float data_array[DATA_ARRAY_SIZE];
 int loop_counter = 0;
 int loop_minimum = 2;
 
-//
-//#include <SoftwareSerial.h>
-//
-//#define WIFI_EN 8
-//SoftwareSerial mySerial(5, 6); // RX, TX
-//
-//
-//
-//// adding after working
-//
-//#define SERIAL_ID 0
-//#define DEBUG_MODE 1
-//// # define INITIAL_DATE
-////----------------libraries-----------------
-//#include <Statistic.h>
-//#include <Wire.h>
-//#include <Adafruit_ADS1015.h>
-//#include "LMP91000.h"
-//#include "ClosedCube_HDC1080.h"
-//#include "Adafruit_SHT31.h"
-//#include <EEPROM.h>
-//
-////--------------- definitions-----------------
-//#define FAN_INTERVAL 6000
-//#define READ_INTERVAL 5000
-//#define RTC_ADDR 0x6F
-//#define RTC_TS_BITS 7
-//#define TIME_REG 0x00
-//#define EEP0 0x50    //Address of 24LC256 eeprom chip
-//#define EEP1 0x51    //Address of 24LC256 eeprom chip
-//
-//#define ID_LOCATION 0 // where we save the id
-//#define CHECK_SETUP_INDEX 2 // where we save whether or not we've run the do_once setup functions, including setting id and setting clock
-//#define CHECK_SEND_LOCATION 4// where we save if the data successfully send
-//#define DAYS_NOT_SENT_LOCATION 5// where we log number of days not sent, may be redundant
-//#define START_WRITE_LOCATION 64 // 2nd page
-//#define MAX_MESSAGE_LENGTH 25
-//
-//
-//#define VDIV 5.02    //voltage divider: (1 + 4.02) / 1
-//#define VREF 1.1
-//
-//#define VREF_EN 4
-//#define WIFI_EN 8
-//#define FAN_EN 9
-//
-//#define VOLT A0
-//// numeric code to index the array LMP91000
-//#define CO    0
-//#define EtOH  1
-//#define H2S   2
-//#define SO2   3
-//#define NO2   4
-//#define O3    5
-//#define IAQ   6
-//#define RESP  7
-//
-//#define HDC_ADDRESS 0x40
-//
-//#define DATA_ARRAY_SIZE 14
-//#define EEPROM_BLOCKSIZE 32
-//#define TOTAL_MEASUREMENTS
-//
-//adsGain_t gain[6] = {GAIN_TWOTHIRDS, GAIN_ONE, GAIN_TWO, GAIN_FOUR, GAIN_EIGHT, GAIN_SIXTEEN};
-//adsGain_t adc_pga_gain;
-//
-//Adafruit_SHT31 sht31 = Adafruit_SHT31();
-//Adafruit_SHT31 sht32 = Adafruit_SHT31();
-//ClosedCube_HDC1080 hdc1080;
-//LMP91000 lmp91000;
-//Adafruit_ADS1115 ads(0x49);
-//
-////From D-ULPSM Rev 0.3 LMP91000 Settings //need to set TIACN register, REFCN register, MODECN register
-//// this is a 2-d array because the settings need to be split between different byte
-//int LMP91000_settings[8][2] = {
-//  {LMP91000_TIA_GAIN_EXT | LMP91000_RLOAD_50OHM, LMP91000_REF_SOURCE_EXT | LMP91000_INT_Z_20PCT | LMP91000_BIAS_SIGN_POS | LMP91000_BIAS_1PCT},  //CO
-//  {LMP91000_TIA_GAIN_EXT | LMP91000_RLOAD_50OHM, LMP91000_REF_SOURCE_EXT | LMP91000_INT_Z_20PCT | LMP91000_BIAS_SIGN_POS | LMP91000_BIAS_4PCT}, //EtOH
-//  {LMP91000_TIA_GAIN_EXT | LMP91000_RLOAD_50OHM, LMP91000_REF_SOURCE_EXT | LMP91000_INT_Z_20PCT | LMP91000_BIAS_SIGN_POS | LMP91000_BIAS_0PCT},  //H2S
-//  {LMP91000_TIA_GAIN_EXT | LMP91000_RLOAD_50OHM, LMP91000_REF_SOURCE_EXT | LMP91000_INT_Z_50PCT | LMP91000_BIAS_SIGN_POS | LMP91000_BIAS_10PCT}, //SO2
-//  {LMP91000_TIA_GAIN_EXT | LMP91000_RLOAD_50OHM, LMP91000_REF_SOURCE_EXT | LMP91000_INT_Z_20PCT | LMP91000_BIAS_SIGN_NEG | LMP91000_BIAS_10PCT}, //NO2
-//  {LMP91000_TIA_GAIN_EXT | LMP91000_RLOAD_50OHM, LMP91000_REF_SOURCE_EXT | LMP91000_INT_Z_20PCT | LMP91000_BIAS_SIGN_NEG | LMP91000_BIAS_1PCT},  //O3
-//  {LMP91000_TIA_GAIN_EXT | LMP91000_RLOAD_50OHM, LMP91000_REF_SOURCE_EXT | LMP91000_INT_Z_20PCT | LMP91000_BIAS_SIGN_POS | LMP91000_BIAS_8PCT},  //IAQ
-//  {LMP91000_TIA_GAIN_EXT | LMP91000_RLOAD_50OHM, LMP91000_REF_SOURCE_EXT | LMP91000_INT_Z_50PCT | LMP91000_BIAS_SIGN_NEG | LMP91000_BIAS_10PCT}  //RESP
-//};
-//
-//int MODECN_DEFAULT = LMP91000_FET_SHORT_DISABLED | LMP91000_OP_MODE_AMPEROMETRIC;
-//
-//// declaring instances of objects in the statistic class
-//Statistic stat0;
-//Statistic stat1;
-//Statistic stat2;
-//Statistic stat3;
-//
-//int loop_counter = 0;
-//char* test;
-//long post_index = 0;
-//bool running_fan = true;
-//bool debug_set_rtc = false; // run the clock debug mode, sets clock and prints it
-//bool fan_on;
-////tells device whether or not temp/ humidity sensor is connected
-//bool b_hdc1080 = false, b_sht31_1 = true, b_sht31_2 = true;
-//
-//long read_interval, fan_interval;
-//int gain_index;
-//float mv_adc_ratio = 0.0;
-//
-//bool immediate_run = false;
-//bool debug_run = false;
-//
-//int reading_location = 10;
-//float data_array[DATA_ARRAY_SIZE];
+void do_once() { // do at least once, but not all the time
+  //----------------set id----------------
+
+  // set id (& save it and EEprom)
+  writeEEPROM(EEP0, ID_LOCATION, SERIAL_ID);
+  delay(10);
+  //----------------set clock-----------------
+  rtc_write_date(15, 15, 20, 4, 2, 8, 17); // note: rename function to in order of the time registers in the memory of the rtc
+  // second, minute, hour, day of the week, day, month, year
+  delay(10);
+
+  // set clock & save to rtc
+  if (DEBUG_MODE == 1) {
+    Serial.begin(19200);
+    Serial.println("setup:");
+    Serial.println(readEEPROM(EEP0, ID_LOCATION), DEC);
+    delay(10);
+    rtc_read_timestamp(0);
+    delay(10);
+  }
+  else {
+  }
+  // set gain & save to EEprom
+}
+
 
 void setup()
-{ //----------------pin stuff-----------------
+{ // put your setup code here, to run once:
+  Serial.println("Starting ...");
+
+  //----------------pin stuff-----------------
   // define which way pins work and turn on/off
   analogReference(INTERNAL);
   pinMode(VOLT, INPUT);
@@ -248,6 +166,13 @@ void setup()
   Serial.begin(57600);
   mySerial.begin(9600);
   Wire.begin();
+  // set clock
+  int check_variable = readEEPROM(EEP0, CHECK_SETUP_INDEX);
+  if (check_variable != 57) {
+    do_once();
+    writeEEPROM(EEP0, CHECK_SETUP_INDEX, 57);
+  }
+
   // make dummy data to send
   long input[6] = {145.2, 3.45, 5.2, 350.0, 405.0};
   for (int i = 0; i < 6; i++) {
@@ -272,17 +197,18 @@ void setup()
   // ads.setGain(GAIN_SIXTEEN);    // 16x gain  +/- 0.256V  1 bit = 0.125mV  0.0078125mV
   ads.begin();
 
-  set_afe(10, H2S, 1); // (pin number, sensor type, index#)
+  set_afe(10, O3, 1); // (pin number, sensor type, index#)
   set_afe(11, H2S, 2);
-  set_afe(12, H2S, 3);
-  set_afe(13, H2S, 4);
+  set_afe(12, SO2, 3);
+  set_afe(13, NO2, 4);
 
   Serial.println("setup completed");
+  digitalWrite(WIFI_EN, LOW);
 }
 
 void loop() // run over and over
 { long toc = millis();
-  digitalWrite(WIFI_EN, LOW);
+
   //----------------fan on-----------------
   digitalWrite(FAN_EN, HIGH);  delay(FAN_INTERVAL);
   // turn fan off and wait for anything trapped in inductive coils to discharge
@@ -290,8 +216,8 @@ void loop() // run over and over
   ////-----------take readings------------------
 
   read_data(); // note: updates data_array
-  // sensor 1, sensor 2, sensor 3, sensor4, temp, rh, temp, rh temp, rh, 
-  
+  // sensor 1, sensor 2, sensor 3, sensor4, temp, rh, temp, rh temp, rh,
+
   // note: have 4 more bytes, maybe can add timestamp?
   Serial.println("Data taken is...");
   for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
@@ -299,21 +225,21 @@ void loop() // run over and over
   }
   //long data = data_array;
   //long data[6] = {145.2, 3.45, 5.2, 350.0, 405.0}; // t, h, battery, o, n, s, h
-  char types[DATA_ARRAY_SIZE] = {"oonnsshhtrtrtr"}; 
+  char types[DATA_ARRAY_SIZE] = {"oonnsshhtrtrtr"};
   ////-----------save readings------------------
   Serial.println("Writing data");
   for (int i = 0; i < DATA_ARRAY_SIZE * 2; i += 2) {
     writeEEPROMdouble(EEP0, 64 + i + loop_counter * 32, (data_array[i / 2] + 32768)); // note: save as signed integer
   }
 
- 
-if (DEBUG_MODE==1){
-  loop_minimum = 6*24;
-}
-else{
-  loop_minimum = 2; 
-}
-  if (loop_counter > 2){ //loop_minimum) {
+
+  if (DEBUG_MODE == 1) {
+    loop_minimum = 6 * 24;
+  }
+  else {
+    loop_minimum = 2;
+  }
+  if (loop_counter > 1) { //loop_minimum) {
     ////-----------pull readings------------------
     for (int reading_counter = 0; reading_counter < loop_counter + 1; reading_counter++) {
       //// first pull from EEPROM
@@ -324,15 +250,16 @@ else{
         byte one_e = readEEPROM(EEP0, 64 + i + loop_counter * 32 + 1);
         one_reading_array[i / 2] = ((two_e << 0) & 0xFF) + ((one_e << 8) & 0xFFFF) - 32768; //readEEPROMdouble(EEP0,  64 + i + loop_counter * 32);
       }
-      // turn on wifi 
+      // turn on wifi
       digitalWrite(WIFI_EN, HIGH);
-      delay(5000);
+      delay(20000);
       //// check serial messages
       if (mySerial.available()) {
         while (mySerial.available()) {
           Serial.write(mySerial.read());
         }
       }
+      
       //// send data to AWS
 
       long L = millis();
@@ -341,27 +268,37 @@ else{
       //String s = "hello";
       String s = "";
       //s += L;
-      for (int i = 0; i < MAX_MESSAGE_LENGTH; i++) {
-        s+= types[i]; 
-        s += String(one_reading_array[i]);
+      for (int i = 0; i <8; i++){//DATA_ARRAY_SIZE; i++) {
+        s += types[i];
+        if ( one_reading_array[i] == -32768){
+          s+= "A"; //"NaN";
+        }
+        else{
+         s += String(one_reading_array[i]);
+        }
       }
       s += "x";
       s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
+      Serial.println("data to be posted is...") ;
       Serial.println(s);
       mySerial.write(cbuf);
       mySerial.flush();
       delay(800);
+    }
+    if (mySerial.available()) {
+      while (mySerial.available()) {
+        Serial.write(mySerial.read());
+      }
     }
     // add: wifi low
     digitalWrite(WIFI_EN, LOW);
   }
   loop_counter ++;
 
-  while (millis() - toc < READ_INTERVAL ) {
-    ;
-    delay(500);
-    // deep sleep
-  }
+  //  while (millis() - toc < READ_INTERVAL ) {
+  //    delay(500);
+  //    // deep sleep
+  //  }
 
   Serial.println("Looping");
 }
@@ -531,5 +468,62 @@ void set_adc_gain(int g)
 int configure_LMP91000(int gas)
 {
   return lmp91000.configure( LMP91000_settings[gas][0], LMP91000_settings[gas][1], MODECN_DEFAULT);
+}
+
+//------- CLOCK STUFF ---------------
+//-----------------------------------
+
+
+uint8_t dec2bcd(uint8_t n) {
+  return n + 6 * (n / 10);
+}
+
+uint8_t bcd2dec(uint8_t n) {
+  return n - 6 * (n >> 4);
+}
+
+void printBits(byte myByte) {
+  for (byte mask = 0x80; mask; mask >>= 1) {
+    if (mask  & myByte)
+      Serial.print('1');
+    else
+      Serial.print('0');
+  }
+  Serial.println();
+}
+
+void rtc_write_date(int sec, int mint, int hr24, int dotw, int day, int mon, int yr)
+{
+  Wire.beginTransmission(RTC_ADDR);
+  Wire.write((uint8_t)TIME_REG);
+  Wire.write(dec2bcd(sec) | B10000000);
+  Wire.write(dec2bcd(mint));
+  Wire.write(dec2bcd(hr24)); //hr
+  Wire.write(dec2bcd(dotw) | B00001000); //dotw
+  Wire.write(dec2bcd(day)); //date
+  Wire.write(dec2bcd(mon)); //month
+  Wire.write(dec2bcd(yr)); //year
+
+  Wire.write((byte) 0);
+  //Wire.write((uint8_t)0x00);                     //stops the oscillator (Bit 7, ST == 0)
+  /*
+     Wire.write(dec2bcd(05));
+    Wire.write(dec2bcd(04));                  //sets 24 hour format (Bit 6 == 0)
+    Wire.endTransmission();
+    Wire.beginTransmission(RTC_ADDR);
+    Wire.write((uint8_t)TIME_REG);
+    Wire.write(dec2bcd(30) | _BV(ST));    //set the seconds and start the oscillator (Bit 7, ST == 1)
+  */
+  Wire.endTransmission();
+}
+
+void rtc_read_timestamp(int mode)
+{
+  Wire.beginTransmission(RTC_ADDR);
+  Wire.write((byte)0x00);
+  if (Wire.endTransmission() != 0) {
+    Serial.println("no luck");
+    //return false;
+  }
 }
 
