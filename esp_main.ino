@@ -1,12 +1,22 @@
-#define TEMP  0
-#define HUM   1
-#define BATT  2
-#define O3    3
-#define NO2   4
-#define SO2   5
+#define O3    0
+#define O3_STD 1
+#define NO2   2
+#define NO2_STD   3
+#define SO2   4
+#define SO2_STD   5
 #define H2S   6
+#define H2S_STD   7
+#define TEMP1 8
+#define HUM1  9
+#define TEMP2 10
+#define HUM2  11
+#define TEMP3 12
+#define BATT  13
+#define HOUR  14
+#define MIN   15
 
-#define SERIAL_ID "0"
+
+//#define SERIAL_ID 0
 #define NUMBER_SAVES_LOCATION 3 // location of byte where the number of saves is 
 #define POSTRATE 10000
 #define MAX_MESSAGE_LENGTH 25
@@ -25,13 +35,13 @@ const char* AWS_ENDPOINT = "amazonaws.com";
 // Init and connect Esp8266 WiFi to local wlan
 //const char* pSSID = "Samsung Galaxy S 5 3120"; // REPLACE with your network SSID (name)
 //const char* pPassword = "102867nola"; // REPLACE with your network password (use for WPA, or use as key for WEP)
-const char* pSSID = "passionatepurplepurpoise"; // REPLACE with your network SSID (name)
-const char* pPassword = "Misfits1807$"; // REPLACE with your network password (use for WPA, or use as key for WEP)
+//const char* pSSID = "FiOS-V2Y8G"; // REPLACE with your network SSID (name)
+//const char* pPassword = "few736cage4414drip"; // REPLACE with your network password (use for WPA, or use as key for WEP)
 
 // Constants describing DynamoDB table and values being used
 const char* TABLE_NAME = "ESP8266AWSDemo";
 const char* HASH_KEY_NAME = "id";
-//const char* SERIAL_ID = "ESP01"; // Our sensor ID, to be REPLACED in case of multiple sensors.
+const char* HASH_KEY_VALUE = "ESP01"; // Our sensor ID, to be REPLACED in case of multiple sensors.
 const char* RANGE_KEY_NAME = "timest";
 
 //for reading in serial streams
@@ -54,25 +64,32 @@ AttributeValue hashKey;
 AttributeValue rangeKey;
 ActionError actionError;
 
-AttributeValue tempAV, humAV, battAV, o3AV, no2AV, so2AV, h2sAV;
-AttributeValue attributes[] = {tempAV, humAV, battAV, o3AV, no2AV, so2AV, h2sAV};
-char attributes_names[][5] = {"temp", "hum", "batt", "o3", "no2", "so2", "h2s"};
+AttributeValue o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, battAV, hour, minute; // o3AV, no2AV, so2AV, h2sAV;
+//AttributeValue attributes[] = {tempAV, humAV, battAV, o3AV, no2AV, so2AV, h2sAV};
+AttributeValue attributes[] = {o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, battAV, hour, minute};
+//char attributes_names[][5] = {"temp", "hum", "batt", "o3", "no2", "so2", "h2s"};
+char attributes_names[][14] = {"O3_avg", "O3_std", "NO2_avg", "NO2_std", "SO2_avg", "SO2_std", "H2S_avg", "H2S_std", "temp1", "hum1", "temp2", "hum2", "temp3", "battAV", "hour", "minute"};
 
 void setup() {
   Serial.begin(9600);
+  Serial.println("testing");
+  tempAV1.setS("-9999");
   WiFi.hostname("ESP8266");
   WiFi.begin(pSSID, pPassword);
   delay(100);
 
+  // Wait for WiFi connection
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    Serial.print("Not connected. ");
+    delay(900);
+  }
+  Serial.println("Connected!") ;
+
   //wait a short period for the wifi to connect
   //we'll take arguments from the atmega in the meantime if the connection process is slow
-  if (DEBUG_MODE) Serial.println("connecting to wifi"); 
   check_or_wait_for_wifi(1000);
-
-  if (DEBUG_MODE==1) {
-    Serial.println("posting test post..."); 
-    //post_0();
-  }
+  Serial.println("Setup completed");
 }
 
 void initialize_wifi() { //Initialize ddbClient.
@@ -98,14 +115,7 @@ bool check_or_wait_for_wifi(int max_wait_ms) {
   return false;
 }
 
-
 void loop() {
-  SerialCheck();
-  delay(200);
-}
-
-
-void SerialCheck() {
   if (Serial.available() > 0) { // something came across serial
     delay(10);
     inbyte = -1;
@@ -116,41 +126,65 @@ void SerialCheck() {
       delay(10);
       if (inbyte == '\r' || inbyte == 'x') {
         char mbuf[MAX_MESSAGE_LENGTH];
-        //command example: [t 23.45x] to set temperature as 23.45C.
         if (cbuf[0] == 't') {
-          setParameter(mbuf, TEMP, false);
+          setParameter(mbuf, TEMP1, true);
         }
-        if (cbuf[0] == 'h') {
-          setParameter(mbuf, HUM, false);
+        else if (cbuf[0] == 'o') {
+          setParameter(mbuf, O3, true);
         }
-        if (cbuf[0] == 'b') {
-          setParameter(mbuf, BATT, false);
+        else if (cbuf[0] == 'a') {
+          setParameter(mbuf, O3_STD, true);
         }
-        if (cbuf[0] == 'o') {
-          setParameter(mbuf, O3, false);
+        else if (cbuf[0] == 'n') {
+          setParameter(mbuf, NO2, true);
         }
-        if (cbuf[0] == 'n') {
-          setParameter(mbuf, NO2, false);
+        else if (cbuf[0] == 'b') {
+          setParameter(mbuf, NO2_STD, true);
         }
-        if (cbuf[0] == 's') {
-          setParameter(mbuf, SO2, false);
+        else if (cbuf[0] == 's') {
+          setParameter(mbuf, SO2, true);
         }
-        if (cbuf[0] == 'y') {
-          setParameter(mbuf, H2S, false);
+        else if (cbuf[0] == 'c') {
+          setParameter(mbuf, SO2_STD, true);
+        }
+        else if (cbuf[0] == 'h') {
+          setParameter(mbuf, H2S, true);
         }
         else if (cbuf[0] == 'd') {
-          getDateTimeString();
+          setParameter(mbuf, H2S_STD, true);
         }
+        else if (cbuf[0] == 'r') {
+          setParameter(mbuf, HUM1, true);
+        }
+        else if (cbuf[0] == 'e') {
+          setParameter(mbuf, TEMP2, true);
+        }
+        else if (cbuf[0] == 'f') {
+          setParameter(mbuf, HUM2, true);
+        }
+        else if (cbuf[0] == 'g') {
+          setParameter(mbuf, TEMP3, true);
+        }
+        else if (cbuf[0] == 'v') {
+          setParameter(mbuf, BATT, true);
+        }
+        else if (cbuf[0] == 'H') {
+          setParameter(mbuf, HOUR, true);
+        }
+        else if (cbuf[0] == 'm') {
+          setParameter(mbuf, MIN, true);
+        }
+        // FILL OUT
         else if (cbuf[0] == 'p') {
           if (check_or_wait_for_wifi(10000)) {
             if (!did_dummy_post) {
               postToAWS(did_dummy_post, false);
               did_dummy_post = true;
             }
-            postToAWS(did_dummy_post, false);
+            postToAWS(did_dummy_post, true);
           }
           else {
-            Serial.println("#E5");
+            Serial.println("cannot connect to AWS at this time...");
           }
         }
       }
@@ -161,73 +195,23 @@ void SerialCheck() {
     }
     Serial.flush();
   }
+  delay(200);
 }
 
 //-------FUNCTIONS----------------
-void post_0(){ 
-   /* Create an Item. */
-  AttributeValue id;
-  id.setS(SERIAL_ID);
-  AttributeValue timest;
-  timest.setN(dateTimeProvider.getDateTime());
-
-  /* Create an AttributeValue for 'temp', convert the number to a
-     string (AttributeValue object represents numbers as strings), and
-     use setN to apply that value to the AttributeValue. */
-  char numberBuffer[4];
-  AttributeValue tempAttributeValue;
-  sprintf(numberBuffer, "%d", int(0));
-  tempAttributeValue.setN(numberBuffer);
-
-  /* Create the Key-value pairs and make an array of them. */
-  MinimalKeyValuePair < MinimalString, AttributeValue
-  > att1(HASH_KEY_NAME, id);
-  MinimalKeyValuePair < MinimalString, AttributeValue
-  > att2(RANGE_KEY_NAME, timest);
-  MinimalKeyValuePair < MinimalString, AttributeValue
-  > att3("temp", tempAttributeValue);
-  MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1,
-                                                                     att2, att3
-                                                                   };
-
-  /* Set values for putItemInput. */
-  putItemInput.setItem(MinimalMap < AttributeValue > (itemArray, 3));
-  putItemInput.setTableName(TABLE_NAME);
-
-  /* Perform putItem and check for errors. */
-  PutItemOutput putItemOutput = ddbClient.putItem(putItemInput,
-                                actionError);
-  switch (actionError) {
-    case NONE_ACTIONERROR:
-      Serial.println("PutItem succeeded!");
-      break;
-    case INVALID_REQUEST_ACTIONERROR:
-      Serial.print("ERROR: Invalid request");
-      Serial.println(putItemOutput.getErrorMessage().getCStr());
-      break;
-    case MISSING_REQUIRED_ARGS_ACTIONERROR:
-      Serial.println(
-        "ERROR: Required arguments were not set for PutItemInput");
-      break;
-    case RESPONSE_PARSING_ACTIONERROR:
-      Serial.println("ERROR: Problem parsing http response of PutItem");
-      break;
-    case CONNECTION_ACTIONERROR:
-      Serial.println("ERROR: Connection problem");
-      break;
-  }
-}
-void getDateTimeString() {
-  Serial.println(dateTimeProvider.getDateTime());
-}
-
 void get_message(char m[], char c[]) {
-  for (int i = 2; i < MAX_MESSAGE_LENGTH; i++) {
-    m[i - 2] = c[i];
+  for (int i = 1; i < MAX_MESSAGE_LENGTH; i++) {
+    m[i - 1] = c[i];
   }
 }
 
-void setParameter(char m[], int attribute_index, bool verboz) { //parse and set param value recognized in serial stream
+//void get_message(char m[], char c[]) {
+//  for (int i = 2; i < MAX_MESSAGE_LENGTH; i++) {
+//    m[i - 2] = c[i];
+//  }
+//}
+
+void setParameter(char m[], int attribute_index, bool verboz) { //parse param value recognized in serial stream
   get_message(m, cbuf);
   MinimalString ms = m;
   attributes[attribute_index].setS(ms);
@@ -243,7 +227,7 @@ void postToAWS(bool not_dummy, bool verboz) {
 
   /* Create an Item. */
   AttributeValue id;
-  id.setS(SERIAL_ID);
+  id.setS(HASH_KEY_VALUE);
   AttributeValue timest;
   timest.setN(dateTimeProvider.getDateTime());
   if (not_dummy && verboz) {
@@ -254,42 +238,57 @@ void postToAWS(bool not_dummy, bool verboz) {
   /* Create the Key-value pairs and make an array of them. */
   MinimalKeyValuePair <MinimalString, AttributeValue> att1(HASH_KEY_NAME, id);
   MinimalKeyValuePair <MinimalString, AttributeValue> att2(RANGE_KEY_NAME, timest);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att3(attributes_names[TEMP], attributes[TEMP]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att4(attributes_names[HUM], attributes[HUM]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att5(attributes_names[BATT], attributes[BATT]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att6(attributes_names[O3], attributes[O3]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att7(attributes_names[NO2], attributes[NO2]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att8(attributes_names[SO2], attributes[SO2]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att3(attributes_names[O3], attributes[O3]);// "o3_avg", o3AV_avg);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att4(attributes_names[O3_STD], attributes[O3_STD]);
+  //MinimalKeyValuePair <MinimalString, AttributeValue> att5("no2_avg", no2AV_avg);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att5(attributes_names[NO2], attributes[NO2]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att6(attributes_names[NO2_STD], attributes[NO2_STD]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att7(attributes_names[SO2], attributes[SO2]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att8(attributes_names[SO2_STD], attributes[SO2_STD]);
   MinimalKeyValuePair <MinimalString, AttributeValue> att9(attributes_names[H2S], attributes[H2S]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att10(attributes_names[H2S_STD], attributes[H2S_STD]);
 
-  MinimalKeyValuePair <MinimalString, AttributeValue> itemArray[] = {att1, att2, att3, att4, att5, att6, att7, att8, att9};
+  MinimalKeyValuePair <MinimalString, AttributeValue> att11(attributes_names[TEMP1], attributes[TEMP1]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att12(attributes_names[HUM1], attributes[HUM1]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att13(attributes_names[TEMP2], attributes[TEMP2]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att14(attributes_names[HUM2], attributes[HUM2]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att15(attributes_names[TEMP3], attributes[TEMP3]);
+//
+  MinimalKeyValuePair <MinimalString, AttributeValue> att16(attributes_names[BATT], attributes[BATT]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att17(attributes_names[HOUR], attributes[HOUR]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att18(attributes_names[MIN], attributes[MIN]);
+
+  //change these to match TEMP above
+  //  MinimalKeyValuePair <MinimalString, AttributeValue> att4("batt", battAV);
+  //  MinimalKeyValuePair <MinimalString, AttributeValue> att5("o3_avg", o3AV_avg);
+  //  MinimalKeyValuePair <MinimalString, AttributeValue> att6("no2", no2AV);
+  //  MinimalKeyValuePair <MinimalString, AttributeValue> att7("so2", so2AV);
+  //  MinimalKeyValuePair <MinimalString, AttributeValue> att8("h2s", h2sAV);
+  MinimalKeyValuePair <MinimalString, AttributeValue> itemArray[] = {att1, att2, att3, att4, att5, att6, att7, att8, att9, att10, att11, att12, att13, att14, att15, att16, att17, att18}; //, att4, .....
 
   /* Set values for putItemInput. */
-  putItemInput.setItem(MinimalMap <AttributeValue> (itemArray, 9));
+  putItemInput.setItem(MinimalMap < AttributeValue > (itemArray, 18));
   putItemInput.setTableName(TABLE_NAME);
 
   /* Perform putItem and check for errors. */
-  PutItemOutput putItemOutput = ddbClient.putItem(putItemInput, actionError);
+  PutItemOutput putItemOutput = ddbClient.putItem(putItemInput,
+                                actionError);
   switch (actionError) {
     //response codes simple, but unlikely to randomly occur in i/o stream, for atmega parsing
     case NONE_ACTIONERROR:
       if (not_dummy) Serial.println("#S");
       break;
     case INVALID_REQUEST_ACTIONERROR:
-      if (not_dummy) Serial.println("#E1"); //("ERROR: Invalid request");
+      Serial.println("#E1");//("ERROR: Invalid request");
       //Serial.println(putItemOutput.getErrorMessage().getCStr());
       break;
     case MISSING_REQUIRED_ARGS_ACTIONERROR:
-      if (not_dummy) Serial.println("#E2"); //("ERROR: Required arguments were not set for PutItemInput");
+      Serial.println("#E2");//("ERROR: Required arguments were not set for PutItemInput");
       break;
     case RESPONSE_PARSING_ACTIONERROR:
-      if (not_dummy) Serial.println("#E3"); //("ERROR: Problem parsing http response of PutItem");
+      Serial.println("#E3");//("ERROR: Problem parsing http response of PutItem");
       break;
     case CONNECTION_ACTIONERROR:
-      if (not_dummy) Serial.println("#E4"); //("ERROR: Connection problem");
-      break;
+      Serial.println("#E4");//("ERROR: Connection problem");
   }
-  /* wait to not double-record */
-  delay(750);
-
 }
