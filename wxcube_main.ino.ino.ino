@@ -115,6 +115,7 @@ int loop_counter = 0;
 int loop_minimum = 2;
 int eeprom_write_location = 64;
 int device;
+byte integer_time[RTC_TS_BITS]; // what we'll store time array in
 char types[] = {"oonnsshhtrtrtrdhm"};
 void do_once() { // do at least once, but not all the time
   //----------------set id----------------
@@ -168,7 +169,8 @@ void setup()
   Serial.begin(57600);
   mySerial.begin(9600);
   Wire.begin();
-  // set clock
+
+
   int check_variable = readEEPROM(EEP0, CHECK_SETUP_INDEX);
   if (check_variable != 57) {
     do_once();
@@ -203,6 +205,11 @@ void setup()
   set_afe(11, H2S, 2);
   set_afe(12, SO2, 3);
   set_afe(13, NO2, 4);
+  // set clock
+  delay(50);
+  rtc_write_date(0, 0, 0, 0, 0, 0, 0);
+  rtc_read_timestamp(0);
+  delay(50);
 
   Serial.println("setup completed");
   digitalWrite(WIFI_EN, LOW);
@@ -246,45 +253,20 @@ void loop() // run over and over
     device = EEP0;
     eeprom_write_location = 64;
   }
-  // write each datapoint
-//  for (int i = 0; i < DATA_ARRAY_SIZE * 2; i += 2) {
-//    //  writeEEPROMdouble(EEP0, 64 + i + loop_counter * 32, (data_array[i / 2] + 32768)); // note: save as signed integer
-//    writeEEPROMdouble(device, eeprom_write_location+ i + loop_counter * EEPROM_BLOCKSIZE, (data_array[i / 2] + 32768)); // note: save as signed integer
-//
-//  }
 
-    for (int i = 0; i < DATA_ARRAY_SIZE; i += 1) {
-    int save_location = eeprom_write_location + i*2 + loop_counter * EEPROM_BLOCKSIZE ; 
-    //Serial.println(save_location); 
+  for (int i = 0; i < DATA_ARRAY_SIZE; i += 1) {
+    int save_location = eeprom_write_location + i * 2 + loop_counter * EEPROM_BLOCKSIZE ;
+    //Serial.println(save_location);
     writeEEPROMdouble(device, save_location , (data_array[i] + 32768)); // note: save as signed integer
   }
 
   if (loop_counter > 2) { //loop_minimum) {
     ////-----------pull readings------------------
-    //    for (int reading_counter = 0; reading_counter < loop_counter + 1; reading_counter++) {
-    //    for (int reading_counter = loop_counter; reading_counter > 1; reading_counter--) {
-    //      //// first pull from EEPROM
-    //      Serial.println("Reading from EEPROM reading");
-    //      Serial.println(reading_counter);
-    //      long one_reading_array[EEPROM_BLOCKSIZE];
-    //      for (int i = 0; i < DATA_ARRAY_SIZE * 2; i += 2) {
-    //        //byte two_e = readEEPROM(device, 64 + i + loop_counter * 32);
-    //        byte two_e = readEEPROM(device, eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE + i);
-    //        byte one_e = readEEPROM(device, eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE + i + 1);
-    //        one_reading_array[i / 2] = ((two_e << 0) & 0xFF) + ((one_e << 8) & 0xFFFF) - 32768; //readEEPROMdouble(EEP0,  64 + i + loop_counter * 32);
-    //      }
-    //
-    //      Serial.println("Data from EEPROM is...");
-    //      for (int i = 0; i < 17; i++) {
-    //        Serial.println(one_reading_array[i]);
-    //      }
     for (int reading_counter = loop_counter; reading_counter > 1; reading_counter--) {
       //// first pull from EEPROM
       Serial.println("Reading from EEPROM...");
       long one_reading_array[EEPROM_BLOCKSIZE];
       for (int i = 0; i < DATA_ARRAY_SIZE * 2; i += 2) {
-        //        byte two_e = readEEPROM(EEP0, 64 + i + reading_counter * 32);
-        //        byte one_e = readEEPROM(EEP0, 64 + i + reading_counter * 32 + 1);
         byte two_e = readEEPROM(EEP0, eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE + i);
         byte one_e = readEEPROM(EEP0, eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE + i + 1);
         one_reading_array[i / 2] = ((two_e << 0) & 0xFF) + ((one_e << 8) & 0xFFFF) - 32768; //readEEPROMdouble(EEP0,  64 + i + loop_counter * 32);
@@ -293,6 +275,17 @@ void loop() // run over and over
       Serial.println("Data from EEPROM is...");
       for (int i = 0; i < 17; i++) {
         Serial.println(one_reading_array[i]);
+      }
+      // check time and delay so that all boxes aren't uploading at once
+      if (DEBUG_MODE != 1) {
+        rtc_read_timestamp(0);
+        int minute = integer_time[1];
+        while (minute - (int) SERIAL_ID > 15) {
+          Serial.println("Delaying...");
+          delay(60000);
+          rtc_read_timestamp(0);
+          minute = integer_time[1];
+        }
       }
       // turn on wifi
       digitalWrite(WIFI_EN, HIGH);
@@ -303,11 +296,7 @@ void loop() // run over and over
           Serial.write(mySerial.read());
         }
       }
-
       //// send data to AWS
-
-      //long L = millis();
-      //Serial.println(L);
       char cbuf[25];
       for (int i = 0; i < DATA_ARRAY_SIZE; i++) { //DATA_ARRAY_SIZE; i++) {
         String s = "";
@@ -318,7 +307,7 @@ void loop() // run over and over
         else {
           s += String(one_reading_array[i]);
         }
-        s += "x";
+        //s += "x";
         s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
         Serial.println("data to be posted is...") ;
         Serial.println(s);
@@ -326,6 +315,12 @@ void loop() // run over and over
         mySerial.flush();
         delay(800);
       }
+      String s = "x";
+      s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
+      Serial.println("data to be posted is...") ;
+      Serial.println(s);
+      mySerial.write(cbuf);
+      mySerial.flush();
 
     }
     if (mySerial.available()) {
@@ -338,6 +333,7 @@ void loop() // run over and over
     // check for success message
     // if (mySerial.read() == "1"){
     loop_counter = 0;
+
   }
   else {
     Serial.println("Increasing loop_counter") ;
@@ -478,35 +474,21 @@ void read_data() {
       delay(5);
     }
   }
-  for (int channel = 0; channel < 4; channel++) {
-    int x = 100;
-    if (channel % 4 == 0) {
-      float avg = stat0.average();
-      float std = stat0.unbiased_stdev();
-      data_array[0] = avg * x;
-      data_array[1] = std * x;
-    }
-    else if (channel % 4 == 1) {
-      float avg = stat1.average();
-      float std = stat1.unbiased_stdev();
-      data_array[2] = avg * x;
-      data_array[3] = std * x;
-    }
-    else if (channel % 4 == 2) {
-      float avg = stat2.average();
-      float std = stat2.unbiased_stdev();
-      data_array[4] = avg * x;
-      data_array[5] = std * x;
-    }
-    else if (channel % 4 == 3) {
-      float avg = stat3.average();
-      float std = stat3.unbiased_stdev();
-      data_array[6] = avg * x;
-      data_array[7] = std * x;
-    }
-    else {
-    }
-  }
+  float a = convert_to_mv(ads.readADC_SingleEnded(0));
+  delay(5);
+  stat0.add(a);
+
+  a = convert_to_mv(ads.readADC_SingleEnded(1));
+  delay(5);
+  stat1.add(a);
+
+  a = convert_to_mv(ads.readADC_SingleEnded(2));
+  delay(5);
+  stat2.add(a);
+
+  a = convert_to_mv(ads.readADC_SingleEnded(3));
+  delay(5);
+  stat3.add(a);
 
   // read temperature
   data_array[8] = sht31.readTemperature();
@@ -515,18 +497,18 @@ void read_data() {
   data_array[11] = sht32.readHumidity();
   data_array[12] = hdc1080.readTemperature();
 
-  char times[7] ;
-  Wire.beginTransmission(RTC_ADDR);
-  int ind = 0;
-  while (Wire.available()) {
-    char c = Wire.write((byte)0x00);
-    times[ind] = int(c);
-    ind++;
-    delay(10);
-  }
-  data_array[13] = times[4]; //day
-  data_array[14] = times[2]; //hour
-  data_array[15] = times[1]; //minute
+  // read voltage
+  float v = analogRead(VOLT);  delay(10);
+  // take a second reading b/c first one is often off
+  // convert by the ADC range to get the fraction of the full range
+  // multiply by the reference voltage to get actual voltage
+  // multiply by the VDIV to get the unscaled voltage
+  // note: dot on the board is where you can read off this voltage with multimeter, often off to
+  data_array[13] = analogRead(VOLT) / 1023.0 * VREF * VDIV;
+
+  rtc_read_timestamp(1); // updates integer_time
+  data_array[14] = integer_time[2]; //hour
+  data_array[15] = integer_time[1]; //minute
 
 }
 
@@ -591,14 +573,39 @@ void rtc_write_date(int sec, int mint, int hr24, int dotw, int day, int mon, int
   Wire.endTransmission();
 }
 
-void rtc_read_timestamp(int mode)
+int rtc_read_timestamp(int mode)
 {
+  byte rtc_out[RTC_TS_BITS];
+  //int integer_time[RTC_TS_BITS];
   Wire.beginTransmission(RTC_ADDR);
   Wire.write((byte)0x00);
   if (Wire.endTransmission() != 0) {
     Serial.println("no luck");
     //return false;
   }
+  else {
+    //request 7 bytes (secs, min, hr, dow, date, mth, yr)
+    Wire.requestFrom(RTC_ADDR, RTC_TS_BITS);
+
+    // cycle through bytes and remove non-time data (eg, 12 hour or 24 hour bit)
+    for (int i = 0; i < RTC_TS_BITS; i++) {
+      rtc_out[i] = Wire.read();
+      if (mode == 0) printBits(rtc_out[i]);
+      else
+      {
+        //byte b = rtc_out[i];
+        if (i == 0) rtc_out[i] &= B01111111;
+        else if (i == 3) rtc_out[i] &= B00000111;
+        else if (i == 5) rtc_out[i] &= B00011111;
+        //int j = bcd2dec(b);
+        //Serial.print(j);
+        //if(i < how_many - 1) Serial.print(",");
+      }
+    }
+  }
+
+  for (int i = 0; i < RTC_TS_BITS ; i++) {
+    int ii = rtc_out[i];
+    integer_time[i] = bcd2dec(ii);
+  }
 }
-
-
