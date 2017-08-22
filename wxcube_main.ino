@@ -16,8 +16,9 @@
 //#include "keys.h" // wifi passwords, amazon table details, serial id
 
 //--------------- definitions-----------------
-#define FAN_INTERVAL 6000
-#define READ_INTERVAL 600000//60000 // change for debug
+#define FAN_INTERVAL 30000
+#define READ_INTERVAL 180000//60000 // change for debug
+#define SLEEP_INTERVAL 600000
 #define RTC_ADDR 0x6F
 #define RTC_TS_BITS 7
 #define TIME_REG 0x00
@@ -112,7 +113,7 @@ bool debug_run = false;
 int reading_location = 10;
 float data_array[DATA_ARRAY_SIZE];
 int loop_counter = 0;
-int loop_minimum = 2;
+int loop_minimum = 96;
 int eeprom_write_location = 64;
 int device;
 byte integer_time[RTC_TS_BITS]; // what we'll store time array in
@@ -253,9 +254,9 @@ void setup()
   set_afe(13, NO2, 4);
   // set clock
   delay(50);
-  rtc_write_date(0, 0, 0, 0, 0, 0, 0);
-  rtc_read_timestamp(0);
-  delay(50);
+//  rtc_write_date(0, 0, 0, 0, 0, 0, 17);
+//  rtc_read_timestamp(0);
+//  delay(50);
 
   test_post();
   delay(50); 
@@ -282,9 +283,7 @@ void loop() // run over and over
   for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
     Serial.println(data_array[i]);
   }
-  //long data = data_array;
-  //long data[6] = {145.2, 3.45, 5.2, 350.0, 405.0}; // t, h, battery, o, n, s, h
-  //char types[] = {"oonnsshhtrtrtr"};
+
   ////-----------save readings------------------
   Serial.println("Writing data");
   // note: should have that eeprom_write_location = loop_counter*32
@@ -310,7 +309,7 @@ void loop() // run over and over
     writeEEPROMdouble(device, save_location , (data_array[i] + 32768)); // note: save as signed integer
   }
 
-  if (loop_counter > 4 * 24) { //loop_minimum) {
+  if (loop_counter > loop_minimum) { //loop_minimum) {
     ////-----------pull readings------------------
     for (int reading_counter = loop_counter; reading_counter > 1; reading_counter--) {
       //// first pull from EEPROM
@@ -399,7 +398,7 @@ while ( mySerial.available()) {
     loop_counter ++;
   }
 
-  while (millis() - toc < READ_INTERVAL ) {
+  while (millis() - toc < SLEEP_INTERVAL ) {
     delay(1000);
     // deep sleep
   }
@@ -508,31 +507,33 @@ void read_data() {
   stat3.clear();
   long tic = millis();
   // add when we're done debugging
-  //while (tic - millis < 1000*3*60){
-  for (int N = 0; N < TOTAL_MEASUREMENTS; N++) {
-    for (int channel = 0; channel < 4; channel++) {
-      // read the channel and convert to millivolts
-      float a = convert_to_mv(ads.readADC_SingleEnded(channel));
-      // add that to the statistics objec
-      delay(5);
-      if (channel % 4 == 0) {
-        stat0.add(a);
-      }
-      else if (channel % 4 == 1) {
-        stat1.add(a);
-      }
-      else if (channel % 4 == 2) {
-        stat2.add(a);
-      }
-      else if (channel % 4 == 3) {
-        stat3.add(a);
-      }
-      else {
-      }
-      // wait between reads, in milliseconds
-      delay(5);
-    }
-  }
+//  while (tic - millis() < 1000*3*60){
+//  //for (int N = 0; N < TOTAL_MEASUREMENTS; N++) {
+//    for (int channel = 0; channel < 4; channel++) {
+//      // read the channel and convert to millivolts
+//      float a = convert_to_mv(ads.readADC_SingleEnded(channel));
+//      // add that to the statistics objec
+//      delay(5);
+//      if (channel % 4 == 0) {
+//        stat0.add(a);
+//      }
+//      else if (channel % 4 == 1) {
+//        stat1.add(a);
+//      }
+//      else if (channel % 4 == 2) {
+//        stat2.add(a);
+//      }
+//      else if (channel % 4 == 3) {
+//        stat3.add(a);
+//      }
+//      else {
+//      }
+//      // wait between reads, in milliseconds
+//      delay(5);
+//    }
+//  }
+
+  while (tic - millis() < READ_INTERVAL){
   float a = convert_to_mv(ads.readADC_SingleEnded(0));
   delay(5);
   stat0.add(a);
@@ -548,6 +549,7 @@ void read_data() {
   a = convert_to_mv(ads.readADC_SingleEnded(3));
   delay(5);
   stat3.add(a);
+  }
 
   // read temperature
   data_array[8] = sht31.readTemperature();
