@@ -532,8 +532,8 @@ void read_data() {
 //      delay(5);
 //    }
 //  }
-
-  while (tic - millis() < READ_INTERVAL){
+  long toc; 
+  while (tic - toc < READ_INTERVAL){
   float a = convert_to_mv(ads.readADC_SingleEnded(0));
   delay(5);
   stat0.add(a);
@@ -549,8 +549,18 @@ void read_data() {
   a = convert_to_mv(ads.readADC_SingleEnded(3));
   delay(5);
   stat3.add(a);
-  }
 
+  toc = millis(); 
+  }
+  // save out 
+  data_array[0] = stat0.average(); 
+  data_array[1] = stat0.unbiased_stdev(); 
+  data_array[2] = stat1.average(); 
+  data_array[3] = stat1.unbiased_stdev(); 
+  data_array[4] = stat2.average(); 
+  data_array[5] = stat2.unbiased_stdev();
+  data_array[6] = stat3.average(); 
+  data_array[7] = stat3.unbiased_stdev();
   // read temperature
   data_array[8] = sht31.readTemperature();
   data_array[9] = sht31.readHumidity();
