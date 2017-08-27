@@ -20,13 +20,16 @@
 #define NUMBER_SAVES_LOCATION 3 // location of byte where the number of saves is 
 #define POSTRATE 10000
 #define MAX_MESSAGE_LENGTH 25
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 
 #include <ESP8266WiFi.h>
 #include "Esp8266AWSImplementations.h"
 #include "AmazonDynamoDBClient.h"
 #include "AWSFoundationalTypes.h"
 #include "keys.h"
+
+// debug mode 
+bool debug_mode = false; 
 
 // Common AWS constants
 const char* AWS_REGION = "us-west-2";  // REPLACE with your region
@@ -35,13 +38,13 @@ const char* AWS_ENDPOINT = "amazonaws.com";
 // Init and connect Esp8266 WiFi to local wlan
 //const char* pSSID = "Samsung Galaxy S 5 3120"; // REPLACE with your network SSID (name)
 //const char* pPassword = "102867nola"; // REPLACE with your network password (use for WPA, or use as key for WEP)
-//const char* pSSID = "FiOS-V2Y8G"; // REPLACE with your network SSID (name)
-//const char* pPassword = "few736cage4414drip"; // REPLACE with your network password (use for WPA, or use as key for WEP)
+const char* pSSID = "linksys"; // REPLACE with your network SSID (name)
+const char* pPassword = ""; // REPLACE with your network password (use for WPA, or use as key for WEP)
 
 // Constants describing DynamoDB table and values being used
 const char* TABLE_NAME = "ESP8266AWSDemo";
 const char* HASH_KEY_NAME = "id";
-const char* HASH_KEY_VALUE = "ESP01"; // Our sensor ID, to be REPLACED in case of multiple sensors.
+//const char* HASH_KEY_VALUE = SERIAL_ID; // Our sensor ID, to be REPLACED in case of multiple sensors.
 const char* RANGE_KEY_NAME = "timest";
 
 //for reading in serial streams
@@ -61,7 +64,7 @@ AmazonDynamoDBClient ddbClient;
 GetItemInput getItemInput;
 PutItemInput putItemInput;
 AttributeValue hashKey;
-AttributeValue rangeKey;
+AttributeValue rangeKey; 
 ActionError actionError;
 
 AttributeValue o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, battAV, hour, minute; // o3AV, no2AV, so2AV, h2sAV;
@@ -127,52 +130,52 @@ void loop() {
       if (inbyte == '\r' || inbyte == 'x') {
         char mbuf[MAX_MESSAGE_LENGTH];
         if (cbuf[0] == 't') {
-          setParameter(mbuf, TEMP1, true);
+          setParameter(mbuf, TEMP1, debug_mode);
         }
         else if (cbuf[0] == 'o') {
-          setParameter(mbuf, O3, true);
+          setParameter(mbuf, O3, debug_mode);
         }
         else if (cbuf[0] == 'a') {
-          setParameter(mbuf, O3_STD, true);
+          setParameter(mbuf, O3_STD, debug_mode);
         }
         else if (cbuf[0] == 'n') {
-          setParameter(mbuf, NO2, true);
+          setParameter(mbuf, NO2, debug_mode);
         }
         else if (cbuf[0] == 'b') {
-          setParameter(mbuf, NO2_STD, true);
+          setParameter(mbuf, NO2_STD, debug_mode);
         }
         else if (cbuf[0] == 's') {
-          setParameter(mbuf, SO2, true);
+          setParameter(mbuf, SO2, debug_mode);
         }
         else if (cbuf[0] == 'c') {
-          setParameter(mbuf, SO2_STD, true);
+          setParameter(mbuf, SO2_STD, debug_mode);
         }
         else if (cbuf[0] == 'h') {
-          setParameter(mbuf, H2S, true);
+          setParameter(mbuf, H2S, debug_mode);
         }
         else if (cbuf[0] == 'd') {
-          setParameter(mbuf, H2S_STD, true);
+          setParameter(mbuf, H2S_STD, debug_mode);
         }
         else if (cbuf[0] == 'r') {
-          setParameter(mbuf, HUM1, true);
+          setParameter(mbuf, HUM1, debug_mode);
         }
         else if (cbuf[0] == 'e') {
-          setParameter(mbuf, TEMP2, true);
+          setParameter(mbuf, TEMP2, debug_mode);
         }
         else if (cbuf[0] == 'f') {
-          setParameter(mbuf, HUM2, true);
+          setParameter(mbuf, HUM2, debug_mode);
         }
         else if (cbuf[0] == 'g') {
-          setParameter(mbuf, TEMP3, true);
+          setParameter(mbuf, TEMP3, debug_mode);
         }
         else if (cbuf[0] == 'v') {
-          setParameter(mbuf, BATT, true);
+          setParameter(mbuf, BATT, debug_mode);
         }
         else if (cbuf[0] == 'H') {
-          setParameter(mbuf, HOUR, true);
+          setParameter(mbuf, HOUR, debug_mode);
         }
         else if (cbuf[0] == 'm') {
-          setParameter(mbuf, MIN, true);
+          setParameter(mbuf, MIN, debug_mode);
         }
         // FILL OUT
         else if (cbuf[0] == 'p') {
@@ -227,7 +230,9 @@ void postToAWS(bool not_dummy, bool verboz) {
 
   /* Create an Item. */
   AttributeValue id;
-  id.setS(HASH_KEY_VALUE);
+  id.setS(SERIAL_ID);
+
+//  id.setS(HASH_KEY_VALUE);
   AttributeValue timest;
   timest.setN(dateTimeProvider.getDateTime());
   if (not_dummy && verboz) {
@@ -292,3 +297,4 @@ void postToAWS(bool not_dummy, bool verboz) {
       Serial.println("#E4");//("ERROR: Connection problem");
   }
 }
+
