@@ -1,7 +1,7 @@
 //// Trying to send message to ESP
 //----------------PREAMBLE-----------------
 //----------------big, important definitions-----------------
-#define SERIAL_ID 1
+#define SERIAL_ID 2
 #define DEBUG_MODE 1
 // # define INITIAL_DATE
 //----------------libraries-----------------
@@ -18,9 +18,10 @@
 //#include "keys.h" // wifi passwords, amazon table details, serial id
 
 //--------------- definitions-----------------
-#define FAN_INTERVAL 30//30000
+#define SEND_HOUR 13
+#define FAN_INTERVAL 3000//30000
 #define READ_INTERVAL 180//180000//60000 // change for debug
-#define SLEEP_INTERVAL 600 //600000
+//#define SLEEP_INTERVAL 600 //600000
 #define RTC_ADDR 0x6F
 #define RTC_TS_BITS 7
 #define TIME_REG 0x00
@@ -130,7 +131,7 @@ void do_once() { // do at least once, but not all the time
   writeEEPROM(EEP0, ID_LOCATION, SERIAL_ID);
   delay(10);
   //----------------set clock-----------------
-  rtc_write_date(0, 45, 21, 3, 2, 8, 17); // note: rename function to in order of the time registers in the memory of the rtc
+  rtc_write_date(0, 2, 1, 3, 2, 8, 27); // note: rename function to in order of the time registers in the memory of the rtc
   // second, minute, hour, day of the week, day, month, year
   delay(10);
 
@@ -184,13 +185,16 @@ void test_post()
   mySerial.flush();
 
   delay(5000);
+//  long toc = millis(); 
+//  while(millis() - toc < 15000){
   int counter = 0;
   if (mySerial.available()) {
-    while (mySerial.available() & counter < 50) {
+    while (mySerial.available()){// & counter < 50) {
       Serial.write(mySerial.read());
       delay(500);
       counter++ ;
     }
+  ///}
   }
   digitalWrite(WIFI_EN, LOW);
 }
@@ -268,8 +272,11 @@ void setup()
   }
   //  delay(50);
 
-  test_post();
+  //test_post();
   delay(50);
+    //----------------set clock-----------------
+  rtc_write_date(0, 0, 1, 7, 27, 8, 17); // note: rename function to in order of the time registers in the memory of the rtc
+  // second, minute, hour, day of the week, day, month, year
   Serial.println("setup completed");
   digitalWrite(WIFI_EN, LOW);
 }
@@ -318,8 +325,82 @@ void loop() // run over and over
     //Serial.println(save_location);
     writeEEPROMdouble(device, save_location , (data_array[i] + 32768)); // note: save as signed integer
   }
-// if 
-  if (loop_counter > loop_minimum) { //loop_minimum) {
+
+      Serial.println("Increasing loop_counter") ;
+    loop_counter ++;
+///// send data 
+
+//sendData();
+  // deep sleep 
+  // note: millis() won't count up while in 'deep sleep' mode or idle mode
+  delay(500); 
+  rtc_read_timestamp(1);
+  int minute_0 = integer_time[1];
+  int minute = integer_time[1]; 
+  int hour; 
+  while (minute - minute_0 < SLEEP_MINUTES){
+         Serial.println("entering deep sleep mode");
+         delay(500);
+  for (int i = 0; i < 7; i++) {
+    LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
+                  SPI_OFF, USART0_OFF, TWI_OFF);
+    }
+  
+  rtc_read_timestamp(1);
+  minute = integer_time[1];
+  hour = integer_time[2]; 
+
+  // consider the following formulation: 
+  // if (minute%15 ==0){
+  // read_data();
+  // save_data();
+  //}
+//Serial.println(minute);
+//  if (minute-SERIAL_ID < 30){ // && hour == SEND_HOUR {
+//    Serial.println("time o send data!");
+
+    delay(1000); 
+//    rtc_read_timestamp(1);
+//    minute = integer_time[1];
+//  }
+  Serial.println("time difference is...") ;
+  Serial.println(minute-minute_0) ; 
+  delay(50); 
+             // deep sleep
+}
+Serial.println("Waking up..."); 
+
+Serial.println("Sending data.."); 
+sendData();
+//    while ( mySerial.available()) {
+//      inbyte = mySerial.read();
+//      if (inbyte == '#') {
+//        inbyte = mySerial.read();
+//        if (inbyte == 'S') {
+//          loop_counter = 0;
+//        }
+//      }
+//      delay(10); 
+//    }
+ 
+eeprom_write_location = eeprom_write_location + EEPROM_BLOCKSIZE;
+Serial.println("Looping");
+
+}
+
+
+//----------------FUNCTIONS----------------------
+
+void sendData(void) {
+        // turn on wifi
+      digitalWrite(WIFI_EN, HIGH);
+      delay(2000);
+            if (mySerial.available()) {
+        while (mySerial.available()) {
+          Serial.write(mySerial.read());
+        }
+      }
+  //if (loop_counter > loop_minimum) { //loop_minimum) {
     ////-----------pull readings------------------
     for (int reading_counter = loop_counter; reading_counter > 1; reading_counter--) {
       //// first pull from EEPROM
@@ -346,9 +427,7 @@ void loop() // run over and over
           minute = integer_time[1];
         }
       }
-      // turn on wifi
-      digitalWrite(WIFI_EN, HIGH);
-      delay(20000);
+
       //// check serial messages
       if (mySerial.available()) {
         while (mySerial.available()) {
@@ -366,10 +445,10 @@ void loop() // run over and over
         else {
           s += String(one_reading_array[i]);
         }
-        //s += "x";
+        s += "x";
         s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-        Serial.println("data to be posted is...") ;
-        Serial.println(s);
+        //Serial.println("data to be posted is...") ;
+        //Serial.println(s);
         mySerial.write(cbuf);
         mySerial.flush();
         delay(800);
@@ -378,19 +457,25 @@ void loop() // run over and over
       mySerial.write("px");
       mySerial.flush();
     }
-    delay(5000);
-    //    if (mySerial.available()) {
-    //      while (mySerial.available()) {
-    //        Serial.write(mySerial.read());
-    //      }
-    //    }
-    // reset loop counter if sending is successful
+    delay(9000);
+
+//    if (mySerial.available()) {
+//    while (mySerial.available()){// & counter < 50) {
+//      Serial.write(mySerial.read());
+//      delay(500);
+//      //counter++ ;
+//    }
+//    //    }
+//    // reset loop counter if sending is successful
     while ( mySerial.available()) {
+      Serial.println("listening to ESP"); 
       inbyte = mySerial.read();
+      Serial.write(inbyte); 
       if (inbyte == '#') {
         inbyte = mySerial.read();
         if (inbyte == 'S') {
           loop_counter = 0;
+          Serial.println("resetting counter"); 
         }
       }
       delay(50);
@@ -398,49 +483,15 @@ void loop() // run over and over
 
     // add: wifi low
     digitalWrite(WIFI_EN, LOW);
-    // check for success message
-    // if (mySerial.read() == "1"){
-    //loop_counter = 0;
-
-  }
-  else {
-    Serial.println("Increasing loop_counter") ;
-    loop_counter ++;
-  }
-
-  // deep sleep 
-  // note: millis() won't count up while in 'deep sleep' mode or idle mode
-  //while (millis() - toc < SLEEP_INTERVAL ) {
-  delay(500); 
-  rtc_read_timestamp(1);
-  int minute_0 = integer_time[1];
-  int minute = integer_time[1]; 
-  while (minute - minute_0 < SLEEP_MINUTES){
-         Serial.println("entering deep sleep mode");
-         delay(500);
-  for (int i = 0; i < 7; i++) {
-    LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
-                  SPI_OFF, USART0_OFF, TWI_OFF);
-    }
+//  }
+//  else {
+//    Serial.println("Increasing loop_counter") ;
+//    loop_counter ++;
+//  }
   
-  rtc_read_timestamp(1);
-  minute = integer_time[1];
-  Serial.println(minute_0-minute) ; 
-  delay(50); 
-             // deep sleep
-}
-Serial.println("Waking up..."); 
-eeprom_write_location = eeprom_write_location + EEPROM_BLOCKSIZE;
-Serial.println("Looping");
-//  Serial.println("loop_counter is : ");
-//  Serial.println(loop_counter);
-//
-//  Serial.println("eeprom write location is : " );
-//  Serial.println(eeprom_write_location);
 }
 
 
-//----------------FUNCTIONS----------------------
 long writeEEPROMdouble(int deviceaddress, unsigned int eeaddress, int value)
 {
   //    int value = input[i];
@@ -563,9 +614,9 @@ void read_data()
 
   //float data_array[14]; // save out all the data: 8 voltages for sensors  and 2 for temp/rh
   //int x = 1000;
-
-  for (int channel = 0; channel < 4; channel++) {
     int x = 100;
+  for (int channel = 0; channel < 4; channel++) {
+
     if (channel % 4 == 0) {
       float avg = stat0.average();
       float std = stat0.unbiased_stdev();
@@ -612,7 +663,7 @@ void read_data()
   data_array[11] = (sht32.readHumidity() +  sht31.readHumidity()) * 0.5 ; // take humidity means to fit
   data_array[12] = sht31.readTemperature() ;
   //data_array[9] = sht31.readHumidity();
-  data_array[13] = analogRead(VOLT) / 1023.0 * VREF * VDIV;
+  data_array[13] = x*analogRead(VOLT) / 1023.0 * VREF * VDIV;
 
   rtc_read_timestamp(1); // updates integer_time
   data_array[14] = integer_time[2]; //hour
