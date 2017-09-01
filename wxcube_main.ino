@@ -1,7 +1,7 @@
 //// Trying to send message to ESP
 //----------------PREAMBLE-----------------
 //----------------big, important definitions-----------------
-#define SERIAL_ID 2
+#define SERIAL_ID 9
 #define DEBUG_MODE 1
 // # define INITIAL_DATE
 //----------------libraries-----------------
@@ -18,7 +18,7 @@
 //#include "keys.h" // wifi passwords, amazon table details, serial id
 
 //--------------- definitions-----------------
-#define SEND_HOUR 13
+#define SEND_HOUR 14
 #define FAN_INTERVAL 30000//30000
 //#define READ_INTERVAL 180//180000//60000 // change for debug
 //#define SLEEP_INTERVAL 600 //600000
@@ -62,7 +62,7 @@
 #define EEPROM_BLOCKSIZE 32
 //#define TOTAL_MEASUREMENTS 15
 #define TOTAL_MEASUREMENT_TIME 3
-#define SLEEP_MINUTES 11
+#define SLEEP_MINUTES 12
 #define MAX_POST_TRIES 10
 
 adsGain_t gain[6] = {GAIN_TWOTHIRDS, GAIN_ONE, GAIN_TWO, GAIN_FOUR, GAIN_EIGHT, GAIN_SIXTEEN};
@@ -109,7 +109,7 @@ bool debug_set_rtc = false; // run the clock debug mode, sets clock and prints i
 bool fan_on;
 //tells device whether or not temp/ humidity sensor is connected
 //bool b_hdc1080 = false, b_sht31_1 = true, b_sht31_2 = true;
-bool b_hdc1080 = false, b_sht31_1 = false, b_sht31_2 = false;
+//bool b_hdc1080 = false, b_sht31_1 = false, b_sht31_2 = false;
 
 long read_interval, fan_interval;
 int gain_index;
@@ -121,7 +121,7 @@ bool debug_run = false;
 int reading_location = 10;
 float data_array[DATA_ARRAY_SIZE];
 int loop_counter = 0;
-int loop_minimum = 96;
+//int loop_minimum = 96;
 int eeprom_write_location = 64;
 int device;
 byte integer_time[RTC_TS_BITS]; // what we'll store time array in
@@ -130,18 +130,17 @@ char types[] = {"oanbschdtrefgvHm"};
 // temp1, rh1, temp2, rh2, temp3, battery voltage, hour, minute
 void do_once() { // do at least once, but not all the time
   //----------------set id----------------
-
+  Serial.println("Doing do_once()"); 
   // set id (& save it and EEprom)
   writeEEPROM(EEP0, ID_LOCATION, SERIAL_ID);
   delay(10);
   //----------------set clock-----------------
-  rtc_write_date(0, 5, 16, 1, 28, 8, 17); // note: rename function to in order of the time registers in the memory of the rtc
+  rtc_write_date(0, 25, 10, 5, 1, 9, 17); // note: rename function to in order of the time registers in the memory of the rtc
   // second, minute, hour, day of the week, day, month, year
   delay(10);
 
   // set clock & save to rtc
   if (DEBUG_MODE == 1) {
-    Serial.begin(19200);
     Serial.println("setup:");
     Serial.println(readEEPROM(EEP0, ID_LOCATION), DEC);
     delay(10);
@@ -206,7 +205,9 @@ void test_post()
 
 void setup()
 { // put your setup code here, to run once:
-  Serial.println("Starting ...");
+  //  rtc_write_date(0, 20, 12, 3, 30, 8, 17);
+      Serial.begin(57600);
+  Serial.println("Starting setup...");
 
   //----------------pin stuff-----------------
   // define which way pins work and turn on/off
@@ -226,17 +227,26 @@ void setup()
   digitalWrite(FAN_EN, LOW);
   pinMode(WIFI_EN, OUTPUT);
   digitalWrite(WIFI_EN, HIGH);
-  delay(1000);
-  Serial.begin(57600);
+  delay(100);
+  //Serial.begin(57600);
   mySerial.begin(9600);
   Wire.begin();
 
-
+  Serial.println("finished pin setup"); 
+  Serial.println(readEEPROM(EEP0, CHECK_SETUP_INDEX)); 
   int check_variable = readEEPROM(EEP0, CHECK_SETUP_INDEX);
+
   if (check_variable != 57) {
+    Serial.println("Doing initial setup..."); 
     do_once();
     writeEEPROM(EEP0, CHECK_SETUP_INDEX, 57);
   }
+  else{
+    Serial.println("Initial setup already completed"); 
+      loop_counter = readEEPROM(EEP1, LOOP_COUNTER_LOCATION);
+      eeprom_write_location = readEEPROM(EEP1, EEP_WRITE_LOCATION_INDEX);
+  }
+  Serial.println("check variable completed"); 
 
   // make dummy data to send
   //long input[] = {145.2, 3.45, 5.2, 350.0, 405.0};
@@ -280,9 +290,6 @@ void setup()
 
   test_post();
   delay(50);
-
-  loop_counter = readEEPROM(EEP1, LOOP_COUNTER_LOCATION);
-  eeprom_write_location = readEEPROM(EEP1, EEP_WRITE_LOCATION_INDEX);
 
   //----------------set clock-----------------
   //rtc_write_date(0, 10, 9, 7, 28, 8, 17); // note: rename function to in order of the time registers in the memory of the rtc
@@ -376,7 +383,7 @@ eeprom_write_location = eeprom_write_location + EEPROM_BLOCKSIZE;
     //Serial.println(minute);
     //if (minute % 2 == 1) { // && hour == SEND_HOUR {
 //    if (abs((minute-SERIAL_ID)%60) < 2){ // && hour == SEND_HOUR {
-    if (abs((minute-SERIAL_ID))%60 < 2){ // && hour == SEND_HOUR {
+    if (abs((minute-SERIAL_ID))%60 < 2 && hour == SEND_HOUR) {
       Serial.println("time to send data!");
       Serial.println("Sending data..");
       sendData();
