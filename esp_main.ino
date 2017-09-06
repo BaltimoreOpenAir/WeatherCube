@@ -11,16 +11,18 @@
 #define TEMP2 10
 #define HUM2  11
 #define TEMP3 12
-#define BATT  13
-#define HOUR  14
-#define MIN   15
+#define HUM3  13
+#define BATT  14
+#define HOUR  15
+#define MONTH   16
+#define READS   17
 
 
 //#define SERIAL_ID 0
-#define NUMBER_SAVES_LOCATION 3 // location of byte where the number of saves is 
+//#define NUMBER_SAVES_LOCATION 3 // location of byte where the number of saves is 
 #define POSTRATE 10000
-#define MAX_MESSAGE_LENGTH 25
-#define DEBUG_MODE 0
+#define MAX_MESSAGE_LENGTH 35
+#define DEBUG_MODE 1
 
 #include <ESP8266WiFi.h>
 #include "Esp8266AWSImplementations.h"
@@ -38,11 +40,11 @@ const char* AWS_ENDPOINT = "amazonaws.com";
 // Init and connect Esp8266 WiFi to local wlan
 //const char* pSSID = "Samsung Galaxy S 5 3120"; // REPLACE with your network SSID (name)
 //const char* pPassword = "102867nola"; // REPLACE with your network password (use for WPA, or use as key for WEP)
-const char* pSSID = "linksys"; // REPLACE with your network SSID (name)
-const char* pPassword = ""; // REPLACE with your network password (use for WPA, or use as key for WEP)
+//const char* pSSID = "linksys"; // REPLACE with your network SSID (name)
+//const char* pPassword = ""; // REPLACE with your network password (use for WPA, or use as key for WEP)
 
 // Constants describing DynamoDB table and values being used
-const char* TABLE_NAME = "ESP8266AWSDemo";
+const char* TABLE_NAME =  "BaltimoreOpenAir2017"; // "ESP8266AWSDemo";//
 const char* HASH_KEY_NAME = "id";
 //const char* HASH_KEY_VALUE = SERIAL_ID; // Our sensor ID, to be REPLACED in case of multiple sensors.
 const char* RANGE_KEY_NAME = "timest";
@@ -67,11 +69,11 @@ AttributeValue hashKey;
 AttributeValue rangeKey; 
 ActionError actionError;
 
-AttributeValue o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, battAV, hour, minute; // o3AV, no2AV, so2AV, h2sAV;
+AttributeValue o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, humAV3, battAV, hour, month, reads; // o3AV, no2AV, so2AV, h2sAV;
 //AttributeValue attributes[] = {tempAV, humAV, battAV, o3AV, no2AV, so2AV, h2sAV};
-AttributeValue attributes[] = {o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, battAV, hour, minute};
+AttributeValue attributes[] = {o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, humAV3, battAV, hour, month, reads};
 //char attributes_names[][5] = {"temp", "hum", "batt", "o3", "no2", "so2", "h2s"};
-char attributes_names[][14] = {"O3_avg", "O3_std", "NO2_avg", "NO2_std", "SO2_avg", "SO2_std", "H2S_avg", "H2S_std", "temp1", "hum1", "temp2", "hum2", "temp3", "battAV", "hour", "minute"};
+char attributes_names[][19] = {"O3_avg", "O3_std", "NO2_avg", "NO2_std", "SO2_avg", "SO2_std", "H2S_avg", "H2S_std", "temp1", "hum1", "temp2", "hum2", "temp3", "hum3", "battAV", "hour", "month", "reads"};
 
 void setup() {
   Serial.begin(9600);
@@ -84,7 +86,7 @@ void setup() {
   // Wait for WiFi connection
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
-    Serial.print("Not connected. ");
+    //Serial.print("Not connected. ");
     delay(900);
   }
   Serial.println("Connected!") ;
@@ -168,6 +170,9 @@ void loop() {
         else if (cbuf[0] == 'g') {
           setParameter(mbuf, TEMP3, debug_mode);
         }
+        else if (cbuf[0] == 'i') {
+          setParameter(mbuf, HUM3, debug_mode);
+        }
         else if (cbuf[0] == 'v') {
           setParameter(mbuf, BATT, debug_mode);
         }
@@ -175,7 +180,10 @@ void loop() {
           setParameter(mbuf, HOUR, debug_mode);
         }
         else if (cbuf[0] == 'm') {
-          setParameter(mbuf, MIN, debug_mode);
+          setParameter(mbuf, MONTH, debug_mode);
+        }
+        else if (cbuf[0] == 'N') {
+          setParameter(mbuf, READS, debug_mode);
         }
         // FILL OUT
         else if (cbuf[0] == 'p') {
@@ -258,21 +266,21 @@ void postToAWS(bool not_dummy, bool verboz) {
   MinimalKeyValuePair <MinimalString, AttributeValue> att13(attributes_names[TEMP2], attributes[TEMP2]);
   MinimalKeyValuePair <MinimalString, AttributeValue> att14(attributes_names[HUM2], attributes[HUM2]);
   MinimalKeyValuePair <MinimalString, AttributeValue> att15(attributes_names[TEMP3], attributes[TEMP3]);
-//
-  MinimalKeyValuePair <MinimalString, AttributeValue> att16(attributes_names[BATT], attributes[BATT]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att17(attributes_names[HOUR], attributes[HOUR]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att18(attributes_names[MIN], attributes[MIN]);
-
+  MinimalKeyValuePair <MinimalString, AttributeValue> att16(attributes_names[HUM3], attributes[HUM3]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att17(attributes_names[BATT], attributes[BATT]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att18(attributes_names[HOUR], attributes[HOUR]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att19(attributes_names[MONTH], attributes[MONTH]);
+  MinimalKeyValuePair <MinimalString, AttributeValue> att20(attributes_names[READS], attributes[READS]);
   //change these to match TEMP above
   //  MinimalKeyValuePair <MinimalString, AttributeValue> att4("batt", battAV);
   //  MinimalKeyValuePair <MinimalString, AttributeValue> att5("o3_avg", o3AV_avg);
   //  MinimalKeyValuePair <MinimalString, AttributeValue> att6("no2", no2AV);
   //  MinimalKeyValuePair <MinimalString, AttributeValue> att7("so2", so2AV);
   //  MinimalKeyValuePair <MinimalString, AttributeValue> att8("h2s", h2sAV);
-  MinimalKeyValuePair <MinimalString, AttributeValue> itemArray[] = {att1, att2, att3, att4, att5, att6, att7, att8, att9, att10, att11, att12, att13, att14, att15, att16, att17, att18}; //, att4, .....
+  MinimalKeyValuePair <MinimalString, AttributeValue> itemArray[17] = {att1, att2, att3, att4, att5, att6, att7, att8, att9, att10, att11, att12, att13, att14, att15, att16, att17};//, att18, att19,};// att20}; //, att4, .....
 
   /* Set values for putItemInput. */
-  putItemInput.setItem(MinimalMap < AttributeValue > (itemArray, 18));
+  putItemInput.setItem(MinimalMap < AttributeValue > (itemArray, 17)); // maximum attribute number, doesn't seem to be zero indexed??
   putItemInput.setTableName(TABLE_NAME);
 
   /* Perform putItem and check for errors. */
