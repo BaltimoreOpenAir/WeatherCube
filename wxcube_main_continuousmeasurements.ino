@@ -3,8 +3,8 @@
 //----------------big, important definitions-----------------
 #define SERIAL_ID 17
 #define DEBUG_MODE 0
-int start_hour = 0;
-int start_minute =11;
+int start_hour = 9;
+int start_minute =3;
 int start_day = 6;
 int start_day_of_week = 4; // sunday is 0; 
 int start_month = 9;
@@ -246,26 +246,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
   Serial.println("counter increasing to..."); 
   Serial.println(counter);  
 }
-    //for (int i = 0; i < DATA_ARRAY_SIZE; i++) { //DATA_ARRAY_SIZE; i++) {
-    //    String s = "";
-    //    s += types[i];
-    //    if ( one_reading_array[i] == -32768) {
-    //      s += "NaN"; //"NaN";
-    //    }
-    //    else {
-    //      s += String(one_reading_array[i]);
-    //    }
-    //    s += "x";
-    //    s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    //    Serial.println("data to be posted is...") ;
-    //    Serial.println(s);
-    //    mySerial.write(cbuf);
-    //    mySerial.flush();
-    //    delay(800);
-    //  }
-    //
-    //  mySerial.write("px");
-    //  mySerial.flush();
+
 
     delay(5000);
     long toc = millis();
@@ -323,19 +304,15 @@ while (post_success == false && counter < MAX_POST_TRIES ){
       Serial.println("Doing initial setup...");
       do_once();
       writeEEPROM(EEP0, CHECK_SETUP_INDEX, 57);
+      writeEEPROM(EEP0, EEP_WRITE_LOCATION_INDEX, 64); 
+      writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, 0); 
     }
     else {
       Serial.println("Initial setup already completed");
-      loop_counter = readEEPROM(EEP1, LOOP_COUNTER_LOCATION);
-      eeprom_write_location = readEEPROM(EEP1, EEP_WRITE_LOCATION_INDEX);
+      loop_counter = readEEPROM(EEP0, LOOP_COUNTER_LOCATION);
+      eeprom_write_location = readEEPROM(EEP0, EEP_WRITE_LOCATION_INDEX);
     }
     Serial.println("check variable completed");
-
-    // make dummy data to send
-    //long input[] = {145.2, 3.45, 5.2, 350.0, 405.0};
-    //  for (int i = 0; i < 6; i++) {
-    //    writeEEPROMdouble(EEP0, 64 + 2 * i, input[i]);
-    //  }
 
     //----------------set adc/gain stuff-----------------
 
@@ -725,12 +702,12 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
     if (post_success == true) {
       loop_counter = 0 ;
       Serial.println("Writing loop_counter to eep1");
-      writeEEPROM(EEP1, LOOP_COUNTER_LOCATION, loop_counter);
+      writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, loop_counter);
     }
     else {
       Serial.println("Writing loop_counter to eep1");
       Serial.println(loop_counter);
-      writeEEPROM(EEP1, LOOP_COUNTER_LOCATION, loop_counter);
+      writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, loop_counter);
       // save loop_counter to memory
     }
     digitalWrite(WIFI_EN, LOW);

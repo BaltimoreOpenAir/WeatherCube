@@ -1,13 +1,15 @@
 //// Trying to send message to ESP
 //----------------PREAMBLE-----------------
 //----------------big, important definitions-----------------
-#define SERIAL_ID 10
+#define SERIAL_ID 15
 #define DEBUG_MODE 0
-int start_hour = 21;
-int start_minute =52;
-int start_day = 3;// sunday is 0; 
-int start_day_of_week = 3;
+int start_hour = 9;
+int start_minute =19;
+int start_day = 6;
+int start_day_of_week = 4; // sunday is 0; 
 int start_month = 9;
+bool reset = false; // whether to reset eeprom; always rerun
+
 // # define INITIAL_DATE
 //----------------libraries-----------------
 #include <Statistic.h>
@@ -245,27 +247,6 @@ while (post_success == false && counter < MAX_POST_TRIES ){
   Serial.println("counter increasing to..."); 
   Serial.println(counter);  
 }
-    //for (int i = 0; i < DATA_ARRAY_SIZE; i++) { //DATA_ARRAY_SIZE; i++) {
-    //    String s = "";
-    //    s += types[i];
-    //    if ( one_reading_array[i] == -32768) {
-    //      s += "NaN"; //"NaN";
-    //    }
-    //    else {
-    //      s += String(one_reading_array[i]);
-    //    }
-    //    s += "x";
-    //    s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    //    Serial.println("data to be posted is...") ;
-    //    Serial.println(s);
-    //    mySerial.write(cbuf);
-    //    mySerial.flush();
-    //    delay(800);
-    //  }
-    //
-    //  mySerial.write("px");
-    //  mySerial.flush();
-
     delay(5000);
     long toc = millis();
     while (millis() - toc < 15000) {
@@ -309,8 +290,11 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     //Serial.begin(57600);
     mySerial.begin(9600);
     Wire.begin();
-
-
+// to reset...
+    if (reset== true){
+      writeEEPROM(EEP0, CHECK_SETUP_INDEX, 0);
+    }
+    //writeEEPROM(EEP0, CHECK_SETUP_INDEX, 0);
     Serial.println("finished pin setup");
     Serial.println(readEEPROM(EEP0, CHECK_SETUP_INDEX));
     int check_variable = readEEPROM(EEP0, CHECK_SETUP_INDEX);
@@ -319,6 +303,8 @@ while (post_success == false && counter < MAX_POST_TRIES ){
       Serial.println("Doing initial setup...");
       do_once();
       writeEEPROM(EEP0, CHECK_SETUP_INDEX, 57);
+      writeEEPROM(EEP0, EEP_WRITE_LOCATION_INDEX, 64); 
+      writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, 0); 
     }
     else {
       Serial.println("Initial setup already completed");
@@ -327,11 +313,6 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     }
     Serial.println("check variable completed");
 
-    // make dummy data to send
-    //long input[] = {145.2, 3.45, 5.2, 350.0, 405.0};
-    //  for (int i = 0; i < 6; i++) {
-    //    writeEEPROMdouble(EEP0, 64 + 2 * i, input[i]);
-    //  }
 
     //----------------set adc/gain stuff-----------------
 
@@ -617,125 +598,16 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
   number_tries =number_tries+1; 
   delay(50); 
 }
-      
-//      int number_tries = 0;
-//      while (post_success == false && number_tries < MAX_POST_TRIES) {
-//        if (mySerial.available()) {
-//          while (mySerial.available()) {
-//            Serial.write(mySerial.read());
-//            delay(10);
-//          }
-//        }
-//        //// send data to AWS
-//        char cbuf[25];
-//        for (int i = 0; i < 18; i++) { //DATA_ARRAY_SIZE; i++) {
-//          String s = "";
-//          s += types[i];
-//          if ( one_reading_array[i] == -32768) {
-//            s += "NaN"; //"NaN";
-//          }
-//          else {
-//            s += String(one_reading_array[i]);
-//          }
-//          s += "x";
-//          s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-//          Serial.println("data to be posted is...") ;
-//          Serial.println(s);
-//          mySerial.write(cbuf);
-//          mySerial.flush();
-//          delay(800);
-//        }
-//
-//        // hitting limit of 17 fields for dynamodb... adding rest to last field
-//        String s = "";
-//        s += types[18];
-//        for (int i = 18; i < DATA_ARRAY_SIZE; i++) { //DATA_ARRAY_SIZE; i++) {
-//          if ( one_reading_array[i] == -32768) {
-//            s += "NaN"; //"NaN";
-//          }
-//          else {
-//            s += String(one_reading_array[i]);
-//            s += ",";
-//          }
-//          s += "x";
-//          s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-//          Serial.println("rest of data to be posted is...") ;
-//          Serial.println(s);
-//          mySerial.write(cbuf);
-//          mySerial.flush();
-//          delay(800);
-//        }
-//
-//        mySerial.write("px");
-//        mySerial.flush();
-//        Serial.println("Attempted post...");
-//        delay(5000);
-//        long toc = millis();
-//        //while (millis() - toc < 50000) {
-//        int counter = 0;
-//        // while (counter < 25){
-//        if (mySerial.available()) {
-//          while (mySerial.available()) { // & counter < 50) {
-//            inbyte = mySerial.read();
-//            //Serial.write(mySerial.read());
-//            Serial.write(inbyte);
-//            delay(30);
-//            if (inbyte == '#') {
-//              inbyte = mySerial.read();
-//              if (inbyte == 'S') {
-//                post_success = true;
-//                Serial.println("post success!");
-//              }
-//            }
-            //          else {
-            //            Serial.println("trying to post again...");
-            //            mySerial.write("px");
-            //            mySerial.flush();
-            //          }
-            //counter++ ;
-//          }
-//        }
-//        number_tries++;
-//        Serial.println("Trying again... try number");
-//        Serial.print(number_tries);
-//        delay(50);
-//      }
-
-      //    else {
-      //      Serial.println("waiting for message");
-      //      delay(10);
-      //    }
-      // counter++;
-      //}
-      //    int max_tries = 50;
-      //    while ( mySerial.available() && max_tries < 50) {
-      //      inbyte = mySerial.read();
-      //      Serial.write(inbyte);
-      //      if (inbyte == '#') {
-      //        inbyte = mySerial.read();
-      //        if (inbyte == 'S') {
-      //          loop_counter = 0;
-      //          Serial.println("resetting counter");
-      //        }
-      //      }
-      //      else{
-      //          mySerial.write("px");
-      //      mySerial.flush();
-      //      }
-      //      max_tries++;
-      //      delay(500);
-      //      Serial.println("trying again...");
-      //    }
     }
     if (post_success == true) {
       loop_counter = 0 ;
       Serial.println("Writing loop_counter to eep1");
-      writeEEPROM(EEP1, LOOP_COUNTER_LOCATION, loop_counter);
+      writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, loop_counter);
     }
     else {
       Serial.println("Writing loop_counter to eep1");
       Serial.println(loop_counter);
-      writeEEPROM(EEP1, LOOP_COUNTER_LOCATION, loop_counter);
+      writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, loop_counter);
       // save loop_counter to memory
     }
     digitalWrite(WIFI_EN, LOW);
