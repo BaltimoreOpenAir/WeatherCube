@@ -789,7 +789,7 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
 
     //float data_array[14]; // save out all the data: 8 voltages for sensors  and 2 for temp/rh
     //int x = 1000;
-    float x = 100.0;
+    float x = 10.0;
     for (int channel = 0; channel < 4; channel++) {
 
       if (channel % 4 == 0) {
@@ -798,8 +798,8 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
         //      Serial.println("voltage average is:");
         //      Serial.println(avg*100) ;
 
-        data_array[0] = avg * x;
-        data_array[1] = std * x;
+        data_array[0] = avg ;
+        data_array[1] = std ;
 
         //      Serial.println("first data_array element is:");
         //      Serial.println(data_array[0]) ;
@@ -808,16 +808,16 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
       else if (channel % 4 == 1) {
         float avg = stat1.average();
         float std = stat1.unbiased_stdev();
-        data_array[2] = avg * x;
-        data_array[3] = std * x;
+        data_array[2] = avg ;
+        data_array[3] = std ;
       }
       else if (channel % 4 == 2) {
         float avg = stat2.average();
         float std = stat2.unbiased_stdev();
         //      Serial.println(avg/1) ;
         //      Serial.println(std/1) ;
-        data_array[4] = avg * x;
-        data_array[5] = std * x;
+        data_array[4] = avg ;
+        data_array[5] = std ;
       }
       else if (channel % 4 == 3) {
         float avg = stat3.average();
@@ -825,8 +825,8 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
               Serial.println(x*avg/1) ;
               Serial.println(x*std/1) ;
               Serial.println(std/1) ;
-        data_array[6] = avg * x;
-        data_array[7] = std * x;
+        data_array[6] = avg ;
+        data_array[7] = std ;
       }
       else {
       }
