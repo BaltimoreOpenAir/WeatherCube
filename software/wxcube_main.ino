@@ -1,13 +1,16 @@
-//// Trying to send message to ESP
-//----------------PREAMBLE-----------------
-//----------------big, important definitions-----------------
-#define SERIAL_ID 15
-#define DEBUG_MODE 0
-int start_hour = 9;
-int start_minute =19;
-int start_day = 6;
+//----------------EDIT THESE NUMBERS-----------------
+#define SERIAL_ID 9            
+int start_hour = 12;
+int start_minute =00;
+int start_day = 12;
 int start_day_of_week = 4; // sunday is 0; 
-int start_month = 9;
+int start_month = 10;
+//----------------END EDITS--------------------------
+
+
+//----------------PREAMBLE-----------------
+//debug stuff
+#define DEBUG_MODE 0
 bool reset = false; // whether to reset eeprom; always rerun
 
 // # define INITIAL_DATE
@@ -129,7 +132,7 @@ int gain_index;
 float mv_adc_ratio = 0.0;
 
 bool immediate_run = false;
-bool debug_run = false;
+//bool debug_run = false;
 //int reading_location = 10;
 int data_array[DATA_ARRAY_SIZE];
 int loop_counter = 0;
@@ -835,23 +838,30 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
       // consider writing while statement here
       // long L = millis();
       // while (L - millis() < 1000*60){
+      Serial.println("sensor data is:"); 
       for (int channel = 0; channel < 4; channel++) {
         // read the channel and convert to millivolts
         long toc2 = millis();
-        float a = convert_to_mv(ads.readADC_SingleEnded(channel));
+        //float a = convert_to_mv(ads.readADC_SingleEnded(channel));
+        int a = ads.readADC_SingleEnded(channel);
+        // float a = ads.readADC_SingleEnded(channel)); 
         // add that to the statistics objec
         delay(5);
         if (channel % 4 == 0) {
+          //Serial.println(a); 
           stat0.add(a);
         }
         else if (channel % 4 == 1) {
           stat1.add(a);
+          //Serial.println(a);
         }
         else if (channel % 4 == 2) {
           stat2.add(a);
+          //Serial.println(a);
         }
         else if (channel % 4 == 3) {
           stat3.add(a);
+          //Serial.println(a);
         }
         else {
         }
@@ -879,8 +889,9 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
         //      Serial.println("voltage average is:");
         //      Serial.println(avg*100) ;
 
-        data_array[0] = avg * x;
-        data_array[1] = std * x;
+        data_array[0] = avg ;
+        //Serial.println(avg); 
+        data_array[1] = std;
 
         //      Serial.println("first data_array element is:");
         //      Serial.println(data_array[0]) ;
@@ -889,16 +900,20 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
       else if (channel % 4 == 1) {
         float avg = stat1.average();
         float std = stat1.unbiased_stdev();
-        data_array[2] = avg * x;
-        data_array[3] = std * x;
+        data_array[2] = avg ;
+        data_array[3] = std;
+        //Serial.println(avg); 
+
       }
       else if (channel % 4 == 2) {
         float avg = stat2.average();
         float std = stat2.unbiased_stdev();
         //      Serial.println(avg/1) ;
         //      Serial.println(std/1) ;
-        data_array[4] = avg * x;
-        data_array[5] = std * x;
+        data_array[4] = avg;
+        data_array[5] = std;
+        //Serial.println(avg); 
+
       }
       else if (channel % 4 == 3) {
         float avg = stat3.average();
@@ -906,13 +921,15 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
         //      Serial.println(x*avg/1) ;
         //      Serial.println(x*std/1) ;
         //      Serial.println(std/1) ;
-        data_array[6] = avg * x;
-        data_array[7] = std * x;
+        data_array[6] = avg;
+        data_array[7] = std;
+        //Serial.println(avg); 
+
       }
       else {
       }
     }
-    // read temperature
+    // read temperature values
     // put this inside another loop but should work for now
     for (int temp_counter = 0; temp_counter < 10; temp_counter++) {
       stat4.add(hdc1080.readTemperature());
@@ -1173,4 +1190,5 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
       integer_time[i] = bcd2dec(ii);
     }
   }
+
 
