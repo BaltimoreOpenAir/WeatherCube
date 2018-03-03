@@ -198,7 +198,7 @@ void do_once() { // do at least once, but not all the time
     pinMode(SD_CS, OUTPUT);
 
 
-    digitalWrite(VREF_EN, LOW);
+    digitalWrite(VREF_EN, HIGH);
     //digitalWrite(WIFI_EN, LOW);
     digitalWrite(FAN_EN, LOW);
     pinMode(WIFI_EN, OUTPUT);
@@ -305,8 +305,8 @@ void do_once() { // do at least once, but not all the time
         for (int channel = 0; channel < 4; channel++) {
         // read the channel and convert to millivolts
           long toc2 = millis();
-          float a = convert_to_mv(ads.readADC_SingleEnded(channel));
-          data_array[channel] = a ; // reading or the mean reading
+          //float a = convert_to_mv(ads.readADC_SingleEnded(channel));
+          data_array[channel] = ads.readADC_SingleEnded(channel); // reading or the mean reading
           // add that to the statistics objec
           delay(5);
           }
