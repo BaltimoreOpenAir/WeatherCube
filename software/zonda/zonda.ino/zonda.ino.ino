@@ -2,14 +2,14 @@
 //----------------big, important definitions-----------------
 #define SERIAL_ID 15
 #define DEBUG_MODE 0
-#define FREQUENCY 1000// sampling frequency in ms
-int start_hour = 9;
-int start_minute =19;
-int start_day = 6;
-int start_day_of_week = 4; // sunday is 0; 
-int start_month = 9;
+#define FREQUENCY 2000// sampling frequency in ms
+int start_hour = 17;
+int start_minute =51;
+int start_day = 5;
+int start_day_of_week = 6; // sunday is 0; 
+int start_month = 3;
 bool reset = false; // whether to reset eeprom; always rerun
-
+#define PM true
 // # define INITIAL_DATE
 //----------------libraries-----------------
 #include <Statistic.h>
@@ -31,8 +31,8 @@ bool reset = false; // whether to reset eeprom; always rerun
 #include <SPI.h>
 #include <SD.h>
 #define SD_CS   10
-#define MAX_NAME_LENGTH 50
-char cbuf[MAX_NAME_LENGTH];
+//#define MAX_MESSAGE_LENGTH 50
+char cbuf[50];
 bool logfile_error = false;
 int yr = 18, mon = 1, dy = 1; // change these to be read
 
@@ -54,7 +54,7 @@ int yr = 18, mon = 1, dy = 1; // change these to be read
 #define LOOP_COUNTER_LOCATION 5 // where we log the number of data points not sent, or loop_counter
 #define EEP_WRITE_LOCATION_INDEX 6// where we log where the counter is; keep rolling it over to conserve lifetime of eeprom memory
 #define START_WRITE_LOCATION 64 // 2nd page 
-#define MAX_MESSAGE_LENGTH 25
+#define MAX_MESSAGE_LENGTH 150
 
 
 #define VDIV 5.02    //voltage divider: (1 + 4.02) / 1
@@ -77,7 +77,7 @@ int yr = 18, mon = 1, dy = 1; // change these to be read
 
 #define HDC_ADDRESS 0x40
 
-#define DATA_ARRAY_SIZE 18
+#define DATA_ARRAY_SIZE 22 // 10 +12
 #define EEPROM_BLOCKSIZE 36
 //#define TOTAL_MEASUREMENTS 15
 #define TOTAL_MEASUREMENT_TIME 3 // In minutes
@@ -95,7 +95,8 @@ Adafruit_ADS1115 ads(0x49);
 // initialize esp and atmega talking
 // software serial mimicking hardware serial
 // atmega has only two lines for communications
-SoftwareSerial mySerial(5, 6); // RX, TX
+//SoftwareSerial mySerial(5, 6); // RX, TX // for ESP communication
+SoftwareSerial mySerial(3, 7); // RX, TX
 
 //From D-ULPSM Rev 0.3 LMP91000 Settings //need to set TIACN register, REFCN register, MODECN register
 // this is a 2-d array because the settings need to be split between different byte
@@ -138,7 +139,6 @@ bool fan_on;
 
 long read_interval, fan_interval;
 int gain_index;
-float mv_adc_ratio = 0.0;
 
 bool immediate_run = false;
 bool debug_run = false;
@@ -196,7 +196,11 @@ void do_once() { // do at least once, but not all the time
     pinMode(FAN_EN, OUTPUT);
     // enable SD card
     pinMode(SD_CS, OUTPUT);
-
+    //  PM sensor 
+  pinMode(A1, OUTPUT);
+  pinMode(A2, OUTPUT);
+  digitalWrite(A1, HIGH);
+  digitalWrite(A2, HIGH);
 
     digitalWrite(VREF_EN, HIGH);
     //digitalWrite(WIFI_EN, LOW);
@@ -206,7 +210,7 @@ void do_once() { // do at least once, but not all the time
     delay(100);
 
   //----------------wire and serial-----------------    
-    mySerial.begin(9600);
+    mySerial.begin(9600); // also in use for the PMS sensor
     Wire.begin();
 
    //----------------SD card-------------------------
@@ -247,7 +251,7 @@ void do_once() { // do at least once, but not all the time
 
     gain_index = 3;
     // make this an array
-    mv_adc_ratio = 0.03125;
+    float mv_adc_ratio = 0.03125;
     set_adc_gain(gain_index);
 
     //--------------AFE and ADC------------------------
@@ -267,7 +271,9 @@ void do_once() { // do at least once, but not all the time
     set_afe(13, NO2, 4);
     // set clock
     delay(50);
-    //rtc_write_date(0, 5, 16, 1, 28, 8, 17);
+//    if (SET_CLOCK==1){ 
+//      rtc_write_date(0, 37, 16, 6, 5, 3, 18);
+//      Serial.println("Clock is set"); }
     //rtc_write_date(0, 24, 0, 2, 29, 8, 17); // note: rename function to in order of the time registers in the memory of the rtc
     // second, minute, hour, day of the week, day, month, year
     rtc_read_timestamp(1);
@@ -295,13 +301,50 @@ void do_once() { // do at least once, but not all the time
 
   void loop() // run over and over
   { 
+    /*
+char readchar;
+long data[12];
+
+  int cutoff = -2000;
+  if (mySerial.available()){
+    char c1, c2;
+    c1= mySerial.read();
+    if(c1 == 0x42){
+      delay(10);
+      c1 = mySerial.read();  delay(10);
+      c1 = mySerial.read();  delay(10);
+      c1 = mySerial.read();  delay(10);
+      for(int i = 0; i < 12; i++){
+        c1 = mySerial.read();  delay(10);
+        c2 = mySerial.read();  delay(10);
+        int i1, i2;
+        i1 = c1;
+        i2 = c2;
+        
+        //these two lines are speculative but should help address the overflow problem
+        if(i1 < -5) i1 += 256;
+        if(i2 < -5) i2 += 256;
+        data[i] = i1 * 256 + i2;
+      }
+
+      Serial.print(millis());
+      Serial.print('\t');
+      for(int i = 0; i < 12; i++){
+        Serial.print(data[i]);
+        Serial.print('\t');
+      }
+      Serial.println();
+    }
+  }
+  */
+    
     //----------------fan on-----------------
-    Serial.println("fan on");
+    //Serial.println("fan on");
     //digitalWrite(FAN_EN, HIGH);  delay(FAN_INTERVAL);
     // turn fan off and wait for anything trapped in inductive coils to discharge
     //digitalWrite(FAN_EN, LOW);  delay(2000);
     ////-----------take readings------------------
-        long toc = millis();
+    long toc = millis();
         for (int channel = 0; channel < 4; channel++) {
         // read the channel and convert to millivolts
           long toc2 = millis();
@@ -314,20 +357,57 @@ void do_once() { // do at least once, but not all the time
     data_array[5] = hdc1080.readHumidity();
     data_array[6] = sht31.readTemperature();
     data_array[7] = sht31.readHumidity();
-    data_array[8] = sht32.readTemperature();
-    data_array[9] = sht31.readHumidity();
 
-    data_array[10] = analogRead(VOLT) / 1023.0 * VREF * VDIV;
+    rtc_read_timestamp(1);
+    data_array[8] = integer_time[0]; // seconds
+    data_array[9] = integer_time[1]; //integer_time[1]; // minute
+    data_array[10]= integer_time[2]; //hour
+    //data_array[8] = sht32.readTemperature();
+    //data_array[9] = sht32.readHumidity();
+
+    //data_array[10] = analogRead(VOLT) / 1023.0 * VREF * VDIV;
     //data_array[11] = PM readings...
+    if (PM) {
+     // Serial.println("Reading PM..."); 
+        int cutoff = -2000;
+  if (mySerial.available()){
+    char c1, c2;
+    c1= mySerial.read();
+    //Serial.println("PM is saying...") ; 
+    //Serial.println(c1); 
+    if(c1 == 0x42){
+      delay(10);
+      for(int i = 11; i < DATA_ARRAY_SIZE; i++){ // 12 things coming out of sensor
+        c1 = mySerial.read();  delay(10);
+        c2 = mySerial.read();  delay(10);
+        int i1, i2;
+        i1 = c1;
+        i2 = c2;
+        //these two lines are speculative but should help address the overflow problem
+        if(i1 < -5) i1 += 256;
+        if(i2 < -5) i2 += 256;
+        data_array[i] = i1 * 256 + i2;
+      }
+      //Serial.println();
+    }
+  }
+    }
     delay(5); 
 
 // write data to sd card 
-     rtc_read_timestamp(1); // updates integer_time
+    // rtc_read_timestamp(1); // updates integer_time
     // second, minute, hour, day of the week, day, month, year
       yr = integer_time[6];
       mon = integer_time[5]; 
       dy = integer_time[4];
-    sprintf(cbuf, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",data_array[0],data_array[1], data_array[2], data_array[3], data_array[4], data_array[5],data_array[6],data_array[7],data_array[8],data_array[9],data_array[10]); // write data to send to cbuf
+    String s = "";
+    for (int i = 0; i <DATA_ARRAY_SIZE ; i++) { //DATA_ARRAY_SIZE; i++) {
+     s += data_array[i];
+     s+= ","; 
+    }
+    s+="\n"; 
+    s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
+    //sprintf(cbuf, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",data_array[0],data_array[1], data_array[2], data_array[3], data_array[4], data_array[5],data_array[6],data_array[7],data_array[8],data_array[9],data_array[10]); // write data to send to cbuf
     delay(10);
     char nbuf[12];
     if(mon < 10 && dy < 10){
@@ -344,11 +424,16 @@ void do_once() { // do at least once, but not all the time
     myFile.println(cbuf);
     myFile.close();
 
-    while(toc-millis() < FREQUENCY){
+    while( millis()-toc < FREQUENCY){
       delay(50);
+      //Serial.println("waiting...");
     }
-   Serial.print("Looping");
+    
+   Serial.println("Looping");
   }
+
+// end of main body code
+  
  //    Serial.println("Taking data...") ;
 //    read_data(); // note: updates data_array
 //    // sensor 1, sensor 2, sensor 3, sensor4, temp, rh, temp, rh temp, rh,
@@ -483,7 +568,7 @@ void do_once() { // do at least once, but not all the time
 
 
   //----------------FUNCTIONS----------------------
-  void sendData() {
+/*  void sendData() {
     digitalWrite(WIFI_EN, HIGH);
     delay(2000);
     //long one_reading_array[EEPROM_BLOCKSIZE];
@@ -603,7 +688,7 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
     }
     digitalWrite(WIFI_EN, LOW);
   }
-
+*/
   long writeEEPROMdouble(int deviceaddress, unsigned int eeaddress, int value)
   {
     //    int value = input[i];
@@ -688,10 +773,10 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
     digitalWrite(num, HIGH);
   }
 
-  float convert_to_mv(float val) {
-    if (val > 32767) val -= 65535;
-    return val * mv_adc_ratio;
-  }
+//  float convert_to_mv(float val) {
+//    if (val > 32767) val -= 65535;
+//    return val * mv_adc_ratio;
+//  }
   //--------READ DATA------------------
   //-----------------------------------
   /*
