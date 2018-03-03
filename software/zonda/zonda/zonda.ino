@@ -2,6 +2,7 @@
 //----------------big, important definitions-----------------
 #define SERIAL_ID 15
 #define DEBUG_MODE 0
+#define SEND_DATA false
 #define FREQUENCY 1000// sampling frequency in ms
 int start_hour = 9;
 int start_minute =19;
@@ -111,7 +112,7 @@ int LMP91000_settings[8][2] = {
 };
 
 int MODECN_DEFAULT = LMP91000_FET_SHORT_DISABLED | LMP91000_OP_MODE_AMPEROMETRIC;
-/*
+
 // declaring instances of objects in the statistic class
 Statistic stat0;
 Statistic stat1;
@@ -123,7 +124,7 @@ Statistic stat6;
 Statistic stat7;
 Statistic stat8;
 Statistic stat9;
-*/
+
 char inbyte;
 //byte cbuf[MAX_MESSAGE_LENGTH];
 char* test;
@@ -282,6 +283,8 @@ void do_once() { // do at least once, but not all the time
     hdc1080.begin(0x40);
 
     //  delay(50);
+
+    if(SEND_DATA){test_post();}
     delay(50);
 
     //----------------set clock-----------------
@@ -311,7 +314,7 @@ void do_once() { // do at least once, but not all the time
           delay(5);
           }
     data_array[4] = hdc1080.readTemperature();
-    data_array[5] = hdc1080.readHumidity();
+    data_array[5] = hdc1080.readHumidity());
     data_array[6] = sht31.readTemperature();
     data_array[7] = sht31.readHumidity();
     data_array[8] = sht32.readTemperature();
@@ -344,7 +347,7 @@ void do_once() { // do at least once, but not all the time
     myFile.println(cbuf);
     myFile.close();
 
-    while(toc-millis() < FREQUENCY){
+    while(toc2-millis() < FREQUENCY){
       delay(50);
     }
    Serial.print("Looping");
@@ -694,7 +697,6 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
   }
   //--------READ DATA------------------
   //-----------------------------------
-  /*
   void read_data()
   {
     Serial.println("Setting VREF HIGH");
@@ -857,7 +859,7 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
     delay(100);
   }
   
-*/
+
   //--------AFE and ADC---------------
   //-----------------------------------
 
