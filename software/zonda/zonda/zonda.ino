@@ -330,6 +330,8 @@ void do_once() { // do at least once, but not all the time
       yr = integer_time[6];
       mon = integer_time[5]; 
       dy = integer_time[4];
+    // need to add hour, minute, second here!!
+    // then add hour, minute, second to cbuf
     sprintf(cbuf, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",data_array[0],data_array[1], data_array[2], data_array[3], data_array[4], data_array[5],data_array[6],data_array[7],data_array[8],data_array[9],data_array[10]); // write data to send to cbuf
     delay(10);
     char nbuf[12];
