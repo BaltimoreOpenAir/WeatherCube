@@ -1,20 +1,31 @@
 # WeatherCube
-This repo provides code and schematics for the WeatherCube, an environmental monitoring platform. 
+This repo provides code and schematics for the WeatherCube, an environmental monitoring platform used for the Baltimore OpenAir project. More info is on our project page at baltimoreopenair.github.io
 
 #
 
 # Hardware
 
+## Circuit Boards 
+
+### Solder male header pins onto the main sensor board 
+### Solder the main sensor board to the solar charging board
+### Plug the Analogue Front End board to the main sensor board
+### Plug the clock battery to the main sensor board 
+### Place the enable pin onto the main sensor board
+
+## Sensors 
+Read the calibration codes off the sensor QR codes using any QR code reader. Save these codes for later calibration. Then, plug in the sensors clockwise from the top left in the following order: O3, H2S, SO2, and NO2. 
+
 # Software 
 
 ## Arduino Installation
-Step zero is to install Arduino. Note that in Linux, you may need need to launch Arduino using sudo priveleges. 
+Step zero is to install [Arduino](https://www.arduino.cc/). Note that in Linux, you may need need to launch Arduino using sudo priveleges. 
 
 ### 1. Add the ESP8266 board to Arduino. 
 
 Follow: https://learn.sparkfun.com/tutorials/esp8266-thing-hookup-guide/installing-the-esp8266-arduino-addon 
 
-### 2. Verify that you have the following libraries. In Arduino, click Sketch--> Include Library --> Manage Libraries and search for the following libraries. 
+### 2. Verify that you have the following libraries. If not, in Arduino, click Sketch--> Include Library --> Manage Libraries and search for the following libraries. When you find the library, click on it and an install button should appear. Click on this button to install. 
 - Statistic
 - SoftwareSerial
 - Wire
@@ -36,13 +47,12 @@ Download and move the following files into the `AWSArduinoSDK` directory you jus
 - AWSFoundationalTypes.h(https://github.com/daniele-salvagni/aws-sdk-esp8266/tree/master/src/common)
 
 
-
 ## AWS setup 
 These instructions are courtesy Daniele Salvagni at https://github.com/daniele-salvagni/aws-sdk-esp8266/ 
 
 ### 1. Create an AWS account
 
-Note this requires a credit card.
+Create an account at https://aws.amazon.com/. Note this requires a credit card but it's possible to be on AWS' free tier. You may also qualify for educational credits. 
 
 ### 2. Set up the DynamoDB Table
 
@@ -83,18 +93,22 @@ const char* awsSecKey = "YOUR AWS SECRET KEY HERE";
 *Do not share your AWS keys with anyone, it is reccomended to create a dedicated user with restricted permissions, do not use your root account. If you accidentally push your keys online disable them immediatly from the [AWS IAM console](https://console.aws.amazon.com/iam/home)*
 
 ## Programming 
-### 1.  Bootload the boards using Atmel studio (if we've given you boards, we've already done this)
-### 2. Load a blink sketch onto the ATMega(or any sketch onto the ATMega that doesn't tie up the serial lines). Program Arduino using the Uno settings 
+### 1.  Bootload the boards using Atmel studio (if we've given you boards, we've already done this for you)
+### 2. Load the Blink example sketch onto the ATMega selecting Arduino Uno as the board 
+For this step, you could use any sketch onto the ATMega that doesn't tie up the serial lines, such as reset_esp.ino.
 ### 3. Edit the keys.h file from AWS setup step 3
 ### 4. Load esp_main sketch onto the ESP8266 
 ### 4. Load wxcube_main sketch onto the ATMega using the Uno settings
 
 # Data 
-### GUI data access
-To view your data, log in to the [AWS Console](http://console.aws.amazon.com/) and navigate to **DynamoDB**. Click on your table and select "Download as CSV". 
+### Data access through AWS Console
+To view your data, log in to the [AWS Console](http://console.aws.amazon.com/) and navigate to **DynamoDB**. Click on "Tables" in the left hand menu, select your table and click on "Items". To download your table, first create a filter by selecting "filter". You can select for ids or for time. Note that ids are strings and time is a number such as '20170908000015'.  Click start search. When the search is complete, click "Actions" and select  "Download as CSV". 
 
 ### Command line/Python data access
-Install Boto3 in Python. 
+Install and configure Boto3 in Python following the [documentation](https://boto3.readthedocs.io/en/latest/guide/quickstart.html#installation). 
+
+The following sample code can be used to retrieve one sensor's data and turn it into a Pandas dataframe with a 'datetime' index. 
+
 ```
 import pandas as pd
 import boto3
@@ -128,8 +142,8 @@ for date in df[['MonthDay', 'HourMinute']].values :
     except ValueError:  
         date_index.append(np.nan)
 df['date_index'] = date_index
-
 ```
 
 For an implementation of the code & a proposed calibration technique, see (https://github.com/BaltimoreOpenAir/BOAFieldEvaluation/blob/master/MDE_Beltsville_Analysis.ipynb). 
-More info is on our project page at baltimoreopenair.github.io
+
+
