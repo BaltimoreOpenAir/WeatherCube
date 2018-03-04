@@ -89,5 +89,47 @@ const char* awsSecKey = "YOUR AWS SECRET KEY HERE";
 ### 4. Load esp_main sketch onto the ESP8266 
 ### 4. Load wxcube_main sketch onto the ATMega using the Uno settings
 
+# Data 
+### GUI data access
+To view your data, log in to the [AWS Console](http://console.aws.amazon.com/) and navigate to **DynamoDB**. Click on your table and select "Download as CSV". 
 
+### Command line/Python data access
+Install Boto3 in Python. 
+```
+import pandas as pd
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('BaltimoreOpenAir2017')
+sel_id = 1 # change this to the sensor id you are querying 
+# the following will pull any data after September 8, 2017; change to your desired date
+response = table.query(KeyConditionExpression=Key('id').eq(str(sel_id)) & Key('timest').gt(20170908000015)) 
+df = pd.DataFrame(response['Items'])
+# clean up the dataframe
+df['timest'] = [pd.to_datetime(str(date)[:-4], format = '%Y%m%d%H%M') for date in df['timest']]
+# read in batteryAV to get the time
+df[['something', 'HourMinute', 'MonthDay', 'AV', 'drop'] ] = df['battAV'].str.split(',').apply(pd.Series)
+# key in the calibration codes, m_o3, m_no2, m_so2, m_h2s
+df[['O3_avg', 'O3_std']]   = df[['O3_avg', 'O3_std']].astype(float)/ m_o3)
+df[['NO2_avg', 'NO2_std']] = df[['NO2_avg', 'NO2_std']].astype(float)/m_no2)
+df[['SO2_avg', 'SO2_std']] = df[['SO2_avg', 'SO2_std']].astype(float)/m_so2)
+df[['H2S_avg', 'H2S_std']] = df[['H2S_avg', 'H2S_std']].astype(float)/m_h2s)
+
+# set up time index 
+date_index = []
+for date in df[['MonthDay', 'HourMinute']].values : 
+    try: 
+        if date[0] == '32767' : 
+            date_index.append(np.nan)
+        elif date[0] == '0' : 
+            date_index.append(np.nan)
+        else:
+            date_index.append(pd.to_datetime('2017' +date[0]+date[1], format = '%Y%m%d%H%M'))
+    except ValueError:  
+        date_index.append(np.nan)
+df['date_index'] = date_index
+
+```
+
+For an implementation of the code & a proposed calibration technique, see (https://github.com/BaltimoreOpenAir/BOAFieldEvaluation/blob/master/MDE_Beltsville_Analysis.ipynb). 
 More info is on our project page at baltimoreopenair.github.io
