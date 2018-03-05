@@ -86,7 +86,7 @@ title="soldering headers on the usb/ttl atmega adapter"/>
 title="soldering headers on the usb/ttl esp adapter"/>
 
 ### Plug things together
-
+Follow the following figures to connect the differents component together. Do not forget to place the enable jumper on the main board once the code is loaded in
 
 <img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_connections.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
 title="Connections on the main board"/>
@@ -96,7 +96,27 @@ title="Connections on the main board"/>
 title="Connections on the Analog front end"/>
 
 ## Sensors 
-Read the calibration codes off the sensor QR codes using any QR code reader. Save these codes for later calibration. Then, plug in the sensors clockwise from the top left in the following order: O3, H2S, SO2, and NO2. 
+Read the calibration codes off the sensor QR codes using any QR code reader. Save these codes for later calibration. Then, plug in the sensors clockwise from the top left in the following order: O3, H2S, SO2, and NO2.
+
+## Code loading
+
+The software section describes the code that need to be loaded for the project. Here we describe the hardware setup necessary to communicate with the assembled device.
+
+1- take the jumper off the enable pin on the main board.
+
+2- connect the usb/ttl adapters on the wifi chip and on the atmega adapter.
+
+3- make sure the FTDI controller jumper is on 3.3V
+
+4- connect the FTDI controller with the usb cable to the computer. make sure that the ftdi controller has the proper driver installed. This can be done on windows by running this [executable]{https://cdn.sparkfun.com/assets/learn_tutorials/7/4/CDM21228_Setup.exe}.
+
+5- connect the ftdi controller on the esp adapter.
+
+6-  Using Arduino IDE, select the right com port and select the generic esp8266 in the tool section and load the esp8266 code. Make sure to modify the code with the target wifi credentials.
+
+7- disconnect the FTDI controller and connect it to the atmega adapter. Using Arduino IDE, select the right com port and the arduino UNO board, load the code. You may have trouble to establish connections with the atmega when loading a code more than once. Restarting the computer seem to help in that case.
+
+8- disconnect the adapters and put back the enable jumper. your weathercube is ready to be deployed!
 
 # Software 
 
