@@ -108,7 +108,7 @@ The software section describes the code that need to be loaded for the project. 
 
 3- make sure the FTDI controller jumper is on 3.3V
 
-4- connect the FTDI controller with the usb cable to the computer. make sure that the ftdi controller has the proper driver installed. This can be done on windows by running this [executable]{https://cdn.sparkfun.com/assets/learn_tutorials/7/4/CDM21228_Setup.exe}.
+4- connect the FTDI controller with the usb cable to the computer. make sure that the ftdi controller has the proper driver installed. This can be done on windows by running this [executable](https://cdn.sparkfun.com/assets/learn_tutorials/7/4/CDM21228_Setup.exe).
 
 5- connect the ftdi controller on the esp adapter.
 
