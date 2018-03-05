@@ -7,6 +7,15 @@ This repo provides code and schematics for the WeatherCube, an environmental mon
 
 ## Circuit Boards 
 
+### Componnent list:
+
+1- The main board: It supports the microcontrollers. Its the brain of the device
+2- Charging controller: provides power to the main board, charge up the battery with the solar panel
+3- Lithium polymere battery: holds the power for the device
+4- Analog front end board:
+
+## Electronic Assembly:
+
 ### Solder male header pins onto the main sensor board 
 ### Solder the main sensor board to the solar charging board
 ### Plug the Analogue Front End board to the main sensor board
