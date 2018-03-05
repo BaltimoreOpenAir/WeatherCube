@@ -74,6 +74,17 @@ The main board is to be soldered with the wires coming from the charge controlle
 
 <img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_wires.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
 title="soldering of the wires on the main board"/>
+
+### Solder the usb/ttl adapters
+
+The usb/ttl adapter need both male and female headers of 2.54mm pitch. The male headers are suposed to be protruding on the front of both boards and the female headers on the back. You may use a soldered main board as a jig to gold the female headers in place. To snip the female headers to the correct size, first count the numbers of pins you need and pull the next pin. You can then cut the header to sizer with a box cutter and shave the plastic for esthetics. The following image displat the positions of the male headers (yellow circles) and female headers (purple circles). For this, you need 2X 6pin male headers and 4X 7pin female headers. for the female headerds of the usb/ttl ESP adapter, you will need to pull some of the pins to fit in the soldering holes.
+
+<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/USBATMEGA-soldering.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
+title="soldering headers on the usb/ttl atmega adapter"/>
+
+<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/USBESP-soldering.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
+title="soldering headers on the usb/ttl esp adapter"/>
+
 ### Plug things together
 
 
