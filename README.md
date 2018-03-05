@@ -48,16 +48,20 @@ This repo provides code and schematics for the WeatherCube, an environmental mon
 
 5- a breadboard to serve as jig
 
+6- A good multimeter for quality check
+
 ### Solder male header pins onto the main sensor board 
 
-Use male 2.54mm (1/10th in) pitch headers. The headers come in 40 pins assembly, and will need to be sniped to the correct size. for this board you need 3x 7pins, 2x 2pins and 1x 1pin headers. You can use the ttl/usb adapter as jig to hold the pins in place at a right angle from the board. the pins should protrude in the front of the board and be soldered from the back. The positions of the headers are marked by yellow cirlce in the following image.
+Use male 2.54mm (1/10th in) pitch headers. The headers come in 40 pins assembly, and will need to be sniped to the correct size. for this board you need 3x 7pins, 2x 2pins and 1x 1pin headers. You can use the ttl/usb adapter as jig to hold the pins in place at a right angle from the board. the pins should protrude in the front of the board and be soldered from the back. The positions of the headers are marked by yellow cirlces in the following image.
 
 <img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_pins.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
-title="soldering of the 1/10th pitch pins on the main board (front of the board)"/>
+title="soldering of the 1/10th pitch headers on the main board (front of the board)"/>
 
 ### Solder female header pins onto the Analog Front End (AFE) board
-use female 2mm pitch 2pin header. The
+Use female 2mm pitch 2pin headers. You will need 12x 2oin headers. The pins should protrude from the front of the board and be soldered from the back. The pins should be scrubed with high proof methanol or other alcohols after soldering to avoid sensor reading error as the signals are in nA. Resistance should be in excess of 50M Ohm between the reference and control electrode when the sensor is not mounted. The positions of the headers are marked by yellow cirlces in the following image. 
 
+<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/AFE-soldering.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
+title="soldering of the 2mm pitch headers on the AFE board (front of the board)"/>
 
 ### Solder the main sensor board to the solar charging board
 <img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_wires.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
