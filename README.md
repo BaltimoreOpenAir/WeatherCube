@@ -32,8 +32,12 @@ title="soldering of the 1/10th pitch pins on the main board"/>
 <img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_wires.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
 title="soldering of the wires on the main board"/>
 ### Plug things together
+
+
 <img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_connections.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
 title="Connections on the main board"/>
+
+
 <img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/AFE-connections.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
 title="Connections on the Analog front end"/>
 
