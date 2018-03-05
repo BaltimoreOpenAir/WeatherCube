@@ -58,7 +58,7 @@ This repo provides code and schematics for the WeatherCube, an environmental mon
 
 ### Solder male header pins onto the main sensor board 
 
-Use male 2.54mm (1/10th in) pitch headers. The headers come in 40 pins assembly, and will need to be sniped to the correct size. for this board you need 3x 7pins, 2x 2pins and 1x 1pin headers. You can use the ttl/usb adapter as jig to hold the pins in place at a right angle from the board. the pins should protrude in the front of the board and be soldered from the back. The positions of the headers are marked by yellow cirlces in the following image.
+Use male 2.54mm (1/10th in) pitch headers. The headers come in 40 pins assembly, and will need to be sniped to the correct size. for this board you need 3x 7pins, 2x 2pins and 1x 1pin headers. You can use the ttl/usb adapter and/or a breadboard as jig to hold the pins in place at a right angle from the board. the pins should protrude in the front of the board and be soldered from the back. The positions of the headers are marked by yellow cirlces in the following image.
 
 <img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_pins.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
 title="soldering of the 1/10th pitch headers on the main board (front of the board)"/>
