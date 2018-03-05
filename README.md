@@ -23,6 +23,11 @@ This repo provides code and schematics for the WeatherCube, an environmental mon
 ## Electronic Assembly:
 
 ### Solder male header pins onto the main sensor board 
+
+<img src="https://azdoud.github.io/images/knife.jpg" width="280" style="float:right; margin: 1em 0 4em 2em;"
+title="knife"/>
+
+
 ### Solder the main sensor board to the solar charging board
 ### Plug the Analogue Front End board to the main sensor board
 ### Plug the clock battery to the main sensor board 
