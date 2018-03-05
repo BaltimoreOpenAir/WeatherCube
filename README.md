@@ -24,14 +24,18 @@ This repo provides code and schematics for the WeatherCube, an environmental mon
 
 ### Solder male header pins onto the main sensor board 
 
-<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/AFE-connections.png" width="280" style="float:right; margin: 1em 0 4em 2em;"
+<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_pins.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
 title="soldering of the 1/10th pitch pins on the main board"/>
 
 
 ### Solder the main sensor board to the solar charging board
-### Plug the Analogue Front End board to the main sensor board
-### Plug the clock battery to the main sensor board 
-### Place the enable pin onto the main sensor board
+<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_wires.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
+title="soldering of the wires on the main board"/>
+### Plug things together
+<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_connections.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
+title="Connections on the main board"/>
+<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/AFE-connections.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
+title="Connections on the Analog front end"/>
 
 ## Sensors 
 Read the calibration codes off the sensor QR codes using any QR code reader. Save these codes for later calibration. Then, plug in the sensors clockwise from the top left in the following order: O3, H2S, SO2, and NO2. 
