@@ -64,7 +64,7 @@ Use male 2.54mm (1/10th in) pitch headers. The headers come in 40 pins assembly,
 title="soldering of the 1/10th pitch headers on the main board (front of the board)"/>
 
 ### Solder female header pins onto the Analog Front End (AFE) board
-Use female 2mm pitch 2pin headers. You will need 12x 2oin headers. The pins should protrude from the front of the board and be soldered from the back. You can make a jig with 2mm male headers on a unassembled AFE PCB in order to correctly align the female headers. The pins should be scrubed with high proof methanol or other alcohol after soldering to avoid sensor bias. Resistance should be in excess of 50M Ohm between the reference and control electrode when the sensor is not mounted. The positions of the headers are marked by yellow cirlces in the following image. 
+Use female 2mm pitch 2pin headers. You will need 12x 2pin headers. The pins should protrude from the front of the board and be soldered from the back. You can make a jig with 2mm male headers on a unassembled AFE PCB in order to correctly align the female headers. The pins should be scrubed with high proof methanol or other alcohol after soldering to avoid sensor bias. Resistance should be in excess of 40M Ohm between the reference and control electrode when the sensor is not mounted. The positions of the headers are marked by yellow cirlces in the following image. 
 
 <img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/AFE-soldering.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
 title="soldering of the 2mm pitch headers on the AFE board (front of the board)"/>
@@ -117,6 +117,26 @@ The software section describes the code that need to be loaded for the project. 
 7- disconnect the FTDI controller and connect it to the atmega adapter. Using Arduino IDE, select the right com port and the arduino UNO board, load the code. You may have trouble to establish connections with the atmega when loading a code more than once. Restarting the computer seem to help in that case.
 
 8- disconnect the adapters and put back the enable jumper. your weathercube is ready to be deployed!
+
+## Hardware Quality checks
+
+Using a multimeter one can check all the parameters of the device to check if all the component are working nominaly.
+
+1- Check battery power: on the charge controller board, check the voltage potential at the soldered battery wires. The voltage should be between 2.8v and 4.2V. If close to 0V, check the battery wiring connections. If higher that 0.5V but lower than 2.8V, the battery is probably damaged. If higher than 4.2V the charge controller is damaged. If higher than 2.8V but lower than 3.3V, you should connect and charge the battery before usage using the mini usb port until reaching 4.2V.
+
+2- Solar panel check: on the charge controller board, measure the voltage between the two wires of the solar panel. This should read between 4.1 and 4.4 V when the panel is exposed to direct sunlight. If the voltage is very low, there must be a problem in the wire connection on the solar panel. It the voltage is higher, the solar panel is runing in an open circuit, which means that either the battery is full, or if it is not, that the charge controller is damaged ore the solar panel wire connection on the charge controller is not good.
+
+3- battery charge tester on the charge controller: click on the push button on the charge controller. If the charge controller leds do not light up and the battery voltage is superior to 2.8V this means that the charge controller is damaged.
+
+4- main board power: check the voltage between the red and black wire of the charge controller on the main board. This should read close to 5V. if not the charge controller is damaged, or the connection of the white and black wire is not good. you can then check the volatege between vcc and ground on the board. it should read 3.3v when the enable pin is jumped and 0v else. If it reads 0V when the enable pin is in, the charge board is damaged or the connection is not good. if th reads 3.3V weither or not the jumper is on the enable pin, it means that the enable pin is shorted: check for solder residues that may short the two pins.
+
+5- AFE board checks: the resistance between the 2mm pitch pins should be checked with a good multimeter (measurs resistance up to 40Mohm at least such as [this](https://www.amazon.com/dp/B000JKMTDM/ref=psdc_15707471_t2_B0050LVFS0)). Off the trio of headers for each sensor, the top one should have a resistance higher than 40Mohm when the sesor is not pluged in while the other should display no resistance. a 40Mohm reistance would bias the result by about 20ppb, which is the resolution of the sensor we are using. If the resistance is lower than that, pluck the plastic part of the pin and clean thourouly the plastic part and the pins with methanol. reassemble when dry and check again.
+
+6- Fan check: in normal operation the fan should be runing every 15minutes for 30 seconds. If the fan does not run, you may try to run the fan by applying a 5v potential between its ground and live wires. Make sure you respect polarity. if the fan does not spin, it might be jammed. To unjam the fan, disasemble the air tunnel and manually check for fan rotation. take out any obstruction and check for rotation again. replace fan if need be.
+
+7- Charging operation: check the battery volatage and note it up to 4 significant numbers. Put the weathercube in full sun for few hours. Without the main board unabled the unit should charge the battery at about .05V to .2V per hour in full unobstructed sun. The unit should still charge between .04V to .15V per hours when the unit is in operation. If not, the whole power circuit (solar panel, charging board and battery) might have to be recheched or replaced.
+
+8- Com operation: when the cube is deployed in normal operation, you should recieve wifi communication once every day or as specified. if not, you may want to check first power then wifi communication credential in that unit.
 
 # Software 
 
