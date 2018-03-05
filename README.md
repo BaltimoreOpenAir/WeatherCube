@@ -11,14 +11,28 @@ This repo provides code and schematics for the WeatherCube, an environmental mon
 
 1- The main board: It supports the microcontrollers. Its the brain of the device
 
-
 2- Charging controller: provides power to the main board, charge up the battery with the solar panel
-
 
 3- Lithium polymere battery: holds the power for the device
 
+4- Analog front end board: holds the air quality sensors
 
-4- Analog front end board:
+5- Coin CR battery: powers the clock in case of loss of power
+
+6- temperature sensor board: measures temperature and humidity in the tunnel
+
+7- solar pannel: powers the unit
+
+8- 4x air quality sensor: for N02,03,SO2 and H2S
+
+9- 3X Molex picoblade cable assembly (2X 4 pins and 1X 5 pins): connects boards together
+
+10- FTDI ttl/usb controller: allows to load code
+
+11- ttl/usb ESP adapter: allows to connect the FTDI controller to load code in the ESP wifi chip
+
+12- ttl/usb ATMEGA adapter: allows to connect the FTDI controller to load code in the ATMEGA microcontroller
+
 
 ## Electronic Assembly:
 
