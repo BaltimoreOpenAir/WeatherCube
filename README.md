@@ -24,7 +24,7 @@ This repo provides code and schematics for the WeatherCube, an environmental mon
 
 ### Solder male header pins onto the main sensor board 
 
-<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/main_board_pins.svg" width="280" style="float:right; margin: 1em 0 4em 2em;"
+<img src="https://github.com/BaltimoreOpenAir/WeatherCube/tree/master/figures/AFE-connections.png" width="280" style="float:right; margin: 1em 0 4em 2em;"
 title="soldering of the 1/10th pitch pins on the main board"/>
 
 
