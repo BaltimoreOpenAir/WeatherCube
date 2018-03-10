@@ -33,13 +33,15 @@ void loop() // run over and over
         c1 = mySerial.read();  delay(10);
         c2 = mySerial.read();  delay(10);
         int i1, i2;
-        i1 = c1;
-        i2 = c2;
+        i1 = int(c1);
+        i2 = int(c2);
         
         //these two lines are speculative but should help address the overflow problem
         if(i1 < -5) i1 += 256;
         if(i2 < -5) i2 += 256;
         data[i] = i1 * 256 + i2;
+        Serial.println("pm data is..."); 
+        Serial.println(i1 * 256 + i2); 
       }
 
       Serial.print(millis());

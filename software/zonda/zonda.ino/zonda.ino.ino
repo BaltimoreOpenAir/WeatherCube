@@ -31,7 +31,6 @@ bool reset = false; // whether to reset eeprom; always rerun
 #include <SPI.h>
 #include <SD.h>
 #define SD_CS   10
-//#define MAX_MESSAGE_LENGTH 50
 char cbuf[50];
 bool logfile_error = false;
 int yr = 18, mon = 1, dy = 1; // change these to be read
@@ -54,7 +53,7 @@ int yr = 18, mon = 1, dy = 1; // change these to be read
 #define LOOP_COUNTER_LOCATION 5 // where we log the number of data points not sent, or loop_counter
 #define EEP_WRITE_LOCATION_INDEX 6// where we log where the counter is; keep rolling it over to conserve lifetime of eeprom memory
 #define START_WRITE_LOCATION 64 // 2nd page 
-#define MAX_MESSAGE_LENGTH 150
+#define MAX_MESSAGE_LENGTH 96
 
 
 #define VDIV 5.02    //voltage divider: (1 + 4.02) / 1
@@ -133,6 +132,7 @@ long post_index = 0;
 bool running_fan = true;
 bool debug_set_rtc = false; // run the clock debug mode, sets clock and prints it
 bool fan_on;
+long data[12];
 //tells device whether or not temp/ humidity sensor is connected
 //bool b_hdc1080 = false, b_sht31_1 = true, b_sht31_2 = true;
 //bool b_hdc1080 = false, b_sht31_1 = false, b_sht31_2 = false;
@@ -143,7 +143,7 @@ int gain_index;
 bool immediate_run = false;
 bool debug_run = false;
 //int reading_location = 10;
-int data_array[DATA_ARRAY_SIZE];
+long data_array[DATA_ARRAY_SIZE];
 int loop_counter = 0;
 //int loop_minimum = 96;
 int eeprom_write_location = 64;
@@ -303,7 +303,7 @@ void do_once() { // do at least once, but not all the time
   { 
     /*
 char readchar;
-long data[12];
+
 
   int cutoff = -2000;
   if (mySerial.available()){
@@ -336,8 +336,8 @@ long data[12];
       Serial.println();
     }
   }
-  */
-    
+  
+    */
     //----------------fan on-----------------
     //Serial.println("fan on");
     //digitalWrite(FAN_EN, HIGH);  delay(FAN_INTERVAL);
@@ -345,29 +345,33 @@ long data[12];
     //digitalWrite(FAN_EN, LOW);  delay(2000);
     ////-----------take readings------------------
     long toc = millis();
+    rtc_read_timestamp(1);
+    data_array[0]= integer_time[2]; //hour
+    data_array[1] = integer_time[1]; //integer_time[1]; // minute
+    data_array[2] = integer_time[0]; // seconds
+
         for (int channel = 0; channel < 4; channel++) {
         // read the channel and convert to millivolts
           long toc2 = millis();
           //float a = convert_to_mv(ads.readADC_SingleEnded(channel));
-          data_array[channel] = ads.readADC_SingleEnded(channel); // reading or the mean reading
+          data_array[channel+3] = ads.readADC_SingleEnded(channel); // reading or the mean reading
           // add that to the statistics objec
           delay(5);
           }
-    data_array[4] = hdc1080.readTemperature();
-    data_array[5] = hdc1080.readHumidity();
-    data_array[6] = sht31.readTemperature();
-    data_array[7] = sht31.readHumidity();
+    data_array[7] = hdc1080.readTemperature();
+    data_array[8] = hdc1080.readHumidity();
+    data_array[9] = sht31.readTemperature();
+    data_array[10] = sht31.readHumidity();
 
-    rtc_read_timestamp(1);
-    data_array[8] = integer_time[0]; // seconds
-    data_array[9] = integer_time[1]; //integer_time[1]; // minute
-    data_array[10]= integer_time[2]; //hour
+
     //data_array[8] = sht32.readTemperature();
     //data_array[9] = sht32.readHumidity();
 
     //data_array[10] = analogRead(VOLT) / 1023.0 * VREF * VDIV;
     //data_array[11] = PM readings...
-    if (PM) {
+    
+    /*
+     if (PM) {
      // Serial.println("Reading PM..."); 
         int cutoff = -2000;
   if (mySerial.available()){
@@ -377,7 +381,8 @@ long data[12];
     //Serial.println(c1); 
     if(c1 == 0x42){
       delay(10);
-      for(int i = 11; i < DATA_ARRAY_SIZE; i++){ // 12 things coming out of sensor
+      //for(int i = 11; i < DATA_ARRAY_SIZE; i++){ // 12 things coming out of sensor
+      for(int i = 0; i < 12; i++){
         c1 = mySerial.read();  delay(10);
         c2 = mySerial.read();  delay(10);
         int i1, i2;
@@ -386,12 +391,16 @@ long data[12];
         //these two lines are speculative but should help address the overflow problem
         if(i1 < -5) i1 += 256;
         if(i2 < -5) i2 += 256;
-        data_array[i] = i1 * 256 + i2;
+        //data_array[i] = i1 * 256 + i2;
+        data[i] = i1 * 256 + i2;
+        Serial.println("pm data is..."); 
+        Serial.println(i1 * 256 + i2); 
       }
       //Serial.println();
     }
   }
     }
+    */
     delay(5); 
 
 // write data to sd card 
@@ -401,12 +410,12 @@ long data[12];
       mon = integer_time[5]; 
       dy = integer_time[4];
     String s = "";
-    for (int i = 0; i <DATA_ARRAY_SIZE ; i++) { //DATA_ARRAY_SIZE; i++) {
+    for (int i = 0; i <11 ; i++) { //DATA_ARRAY_SIZE; i++) {
      s += data_array[i];
      s+= ","; 
     }
-    s+="\n"; 
-    s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
+    //s+="\n"; 
+    s.toCharArray(cbuf, 96); // MAX_MESSAGE_LENGTH);
     //sprintf(cbuf, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",data_array[0],data_array[1], data_array[2], data_array[3], data_array[4], data_array[5],data_array[6],data_array[7],data_array[8],data_array[9],data_array[10]); // write data to send to cbuf
     delay(10);
     char nbuf[12];
@@ -419,11 +428,66 @@ long data[12];
     }
     Serial.print(nbuf);
     Serial.print(": ");
+    //Serial.println("you could never pretend that i dont love you i could never pretend that im your man thats exactly the way that i want it thats exactly the way that i am"); 
+    //Serial.println(""); 
     File myFile = SD.open(nbuf, FILE_WRITE);
     Serial.println(cbuf);
-    myFile.println(cbuf);
-    myFile.close();
+    myFile.print(cbuf);
+    delay(10); 
+    /*
+    s = "";
+//    for (int i = 13; i <DATA_ARRAY_SIZE ; i++) { //DATA_ARRAY_SIZE; i++) { ///should be 12 but 1st pm value seems to be jibberish
+    for(int i = 0; i < 12; i++){
+     s += data[i];
+     //s += data_array[i];
+     s+= ","; 
+    }
+    s+="\n"; 
+    s.toCharArray(cbuf, 96); // MAX_MESSAGE_LENGTH);
+    Serial.print(cbuf);
+    myFile.print(cbuf);
+    delay(10); 
+*/
 
+// read and save PM 
+if (mySerial.available()){
+    char c1, c2;
+    c1= mySerial.read();
+    if(c1 == 0x42){
+      delay(10);
+      c1 = mySerial.read();  delay(10);
+      c1 = mySerial.read();  delay(10);
+      c1 = mySerial.read();  delay(10);
+      for(int i = 0; i < 12; i++){
+        c1 = mySerial.read();  delay(10);
+        c2 = mySerial.read();  delay(10);
+        int i1, i2;
+        i1 = int(c1);
+        i2 = int(c2);
+        
+        //these two lines are speculative but should help address the overflow problem
+        if(i1 < -5) i1 += 256;
+        if(i2 < -5) i2 += 256;
+        data[i] = i1 * 256 + i2;
+        //Serial.println("pm data is..."); 
+        //Serial.println(i1 * 256 + i2); 
+      }
+
+      Serial.print('\t');
+      for(int i = 0; i < 12; i++){
+        Serial.print(data[i]);
+        Serial.print(','); 
+        //Serial.print('\t');
+        myFile.print(data[i]);
+        myFile.print(","); 
+      }
+    }
+}
+    myFile.print("\n"); 
+    myFile.close();
+  Serial.println(""); 
+
+// delay for desired sample frequency
     while( millis()-toc < FREQUENCY){
       delay(50);
       //Serial.println("waiting...");
@@ -433,262 +497,10 @@ long data[12];
   }
 
 // end of main body code
-  
- //    Serial.println("Taking data...") ;
-//    read_data(); // note: updates data_array
-//    // sensor 1, sensor 2, sensor 3, sensor4, temp, rh, temp, rh temp, rh,
-//    Serial.println("looping for testing...");
-//    delay(1000);
-//  
-//    // note: have 4 more bytes, maybe can add timestamp?
-//    Serial.println("Data taken is...");
-//    for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
-//      Serial.println(data_array[i]);
-//    }
-//
-//    ////-----------save readings------------------
-//    Serial.println("Writing data");
-//    // note: should have that eeprom_write_location = loop_counter*32
-//    // pick which eeprom memory to go to
-//    // first case: eeprom write location less than size of 1st eepro
-//    if (eeprom_write_location < (1024.0 * 128.0 - 64.0)) {
-//      device = EEP0;
-//    }
-//    // second case: eeprom write location needs to move to eeprom2
-//    else if (eeprom_write_location < (1024.0 * 128.0)) {
-//      device = EEP1;
-//      eeprom_write_location = 0;
-//    }
-//    // third case: eeprom write location needs to move back to eeprom1
-//    else {
-//      device = EEP0;
-//      eeprom_write_location = 64;
-//    }
-//    Serial.println("Writing data from :");
-//    Serial.println(eeprom_write_location + 0 * 2); //+ loop_counter * EEPROM_BLOCKSIZE );
-//    Serial.println("to:");
-//    Serial.println(eeprom_write_location + DATA_ARRAY_SIZE * 2);  //+ loop_counter * EEPROM_BLOCKSIZE );
-//
-//    for (int i = 0; i < DATA_ARRAY_SIZE; i += 1) {
-//      int save_location = eeprom_write_location + i * 2;// + loop_counter * EEPROM_BLOCKSIZE ;
-//      //Serial.println(save_location);
-//      writeEEPROMdouble(device, save_location , (data_array[i] + 32768)); // note: save as signed integer
-//    }
-//
-//    eeprom_write_location = eeprom_write_location + EEPROM_BLOCKSIZE;
-//    loop_counter ++;
-//    Serial.println("Increasing loop_counter to : ") ;
-//    Serial.println(loop_counter);
-//
-//    // save to SD card 
-//     rtc_read_timestamp(1); // updates integer_time
-//    // second, minute, hour, day of the week, day, month, year
-//      yr = integer_time[6];
-//      mon = integer_time[5]; 
-//      dy = integer_time[4];
-//    sprintf(cbuf, "%d,%d,%d,%d", s0, s1, s2, s3);
-//    delay(1000);
-//    char nbuf[12];
-//    if(mon < 10 && dy < 10){
-//      sprintf(nbuf, "F%d0%d0%d.txt", yr, mon, dy);
-//    }else if(mon < 10 && dy >= 10){
-//      sprintf(nbuf, "F%d0%d%d.txt", yr, mon, dy);
-//    }else if(mon >= 10 && dy < 10){
-//      sprintf(nbuf, "F%d0%d%d.txt", yr, mon, dy);
-//    }
-//    Serial.print(nbuf);
-//    Serial.print(": ");
-//    File myFile = SD.open(nbuf, FILE_WRITE);
-//    Serial.println(cbuf);
-//
-//    // turn data_array into cbuf to send
-//    // maybe should be one_reading_array???
-//     char cbuf[25];
-//  for (int i = 0; i < 14; i++) { //DATA_ARRAY_SIZE; i++) {
-//    String s = "";
-//    if ( data_array[i] == -32768) {
-//      s += "NaN"; //"NaN";
-//      s += ",";
-//    }
-//    else {
-//      s += String(data_array[i]);
-//      s += ",";
-//    }
-//    s += "\n";
-//    s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-//    myFile.println(cbuf);
-//    myFile.close();
-//    
-//    ///// send data
-//    delay(500);
-//    rtc_read_timestamp(1);
-//    int minute_0 = integer_time[1];
-//    int minute = integer_time[1];
-//    int hour;
-//  if(DEBUG_MODE == 1){
-//    Serial.println("Sleeping...");
-//    while ( abs((minute - minute_0)) % 60 < SLEEP_MINUTES) {
-//      Serial.println("entering deep sleep mode");
-//      delay(500);
-//      for (int i = 0; i < 7; i++) {
-//        LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
-//                      SPI_OFF, USART0_OFF, TWI_OFF);
-//      }
-//   }
-//      rtc_read_timestamp(1);
-//      minute = integer_time[1];
-//      hour = integer_time[2];
-//
-//      //    if (abs((minute-SERIAL_ID)%60) < 2){ // && hour == SEND_HOUR {
-//      if (abs((minute - SERIAL_ID)) % 60 < 2 && hour == SEND_HOUR) {
-//        //Serial.println("time to send data!");
-//        //Serial.println("Sending data..");
-//        if(SEND_DATA) sendData();
-//        //Serial.println("Going back to sleep...") ;
-//        delay(500);
-//        // go back to sleep for 4 minutes so we don't double send
-//        for (int i = 0; i < 7 * 3; i++) {
-//          LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
-//                        SPI_OFF, USART0_OFF, TWI_OFF);
-//        }
-//
-//        writeEEPROM(EEP1, EEP_WRITE_LOCATION_INDEX, eeprom_write_location);
-//        rtc_read_timestamp(1);
-//        minute = integer_time[1];
-//      }
-//      Serial.println("time difference is...") ;
-//      Serial.println(abs((minute - minute_0) % 60)) ;
-//      delay(50);
-//      // deep sleep
-//    }
-//    Serial.println("Waking up...");
-//    Serial.println("Looping");
-//
-//  }*/
-
+ 
 
   //----------------FUNCTIONS----------------------
-/*  void sendData() {
-    digitalWrite(WIFI_EN, HIGH);
-    delay(2000);
-    //long one_reading_array[EEPROM_BLOCKSIZE];
-    bool post_success;
-    for (int reading_counter = loop_counter; reading_counter > 1; reading_counter--) {
-      post_success = false;
-      Serial.print("Sending reading number ");
-      Serial.print(reading_counter);
-      delay(50);
 
-      //// first pull from EEPROM
-      Serial.println("Reading from EEPROM at ...");
-      Serial.println(eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE);
-      Serial.println("to...");
-      Serial.println(eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE + DATA_ARRAY_SIZE * 2 + 1);
-
-      long one_reading_array[EEPROM_BLOCKSIZE];
-      for (int i = 0; i < DATA_ARRAY_SIZE * 2; i += 2) {
-        byte two_e = readEEPROM(EEP0, eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE + i);
-        byte one_e = readEEPROM(EEP0, eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE + i + 1);
-        one_reading_array[i / 2] = ((two_e << 0) & 0xFF) + ((one_e << 8) & 0xFFFF) - 32768; //readEEPROMdouble(EEP0,  64 + i + loop_counter * 32);
-        delay(50);
-      }
-
-      Serial.println("Data from EEPROM is...");
-      for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
-        Serial.println(one_reading_array[i]);
-      }
-      //memset(one_reading_array, 0, sizeof(one_reading_array));
-      //// check serial messages
-              if (mySerial.available()) {
-          while (mySerial.available()) {
-            Serial.write(mySerial.read());
-            delay(10);
-          }
-        }
- char cbuf[25];
-  for (int i = 0; i < 14; i++) { //DATA_ARRAY_SIZE; i++) {
-    String s = "";
-    s += types[i];
-    if ( one_reading_array[i] == -32768) {
-      s += "NaN"; //"NaN";
-    }
-    else {
-      s += String(one_reading_array[i]);
-    }
-    s += "x";
-    s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    Serial.println("data to be posted is...") ;
-    Serial.println(s);
-    mySerial.write(cbuf);
-    mySerial.flush();
-    delay(800);
-  }
-  Serial.println("posting next set of data..."); 
-
-  // hitting limit of 17 fields for dynamodb... adding rest to last field
-  String s = "";
-  s += types[14];
-  for (int i = 14; i < DATA_ARRAY_SIZE; i++) { //DATA_ARRAY_SIZE; i++) {
-    if ( one_reading_array[i] == -32768) {
-      s += "NaN"; //"NaN";
-    }
-    else {
-      s += String(one_reading_array[i]);
-    }
-        s += ",";
-  }
-    s += "x";
-    s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    Serial.println("rest of data to be posted is...") ;
-    Serial.println(s);
- 
-    mySerial.write(cbuf);
-    mySerial.flush();
-    delay(800);
- 
-//bool post_success =  false; 
-int number_tries = 0;
-while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write("px");
-  mySerial.flush();
-  Serial.println("Attempted post...");
-  delay(5000);
-  long toc = millis();
-  //while (millis() - toc < 50000) {
-  int counter = 0;
-  // while (counter < 25){
-  if (mySerial.available()) {
-    while (mySerial.available()) { // & counter < 50) {
-      inbyte = mySerial.read();
-      //Serial.write(mySerial.read());
-      Serial.write(inbyte);
-      delay(30);
-      if (inbyte == '#') {
-        inbyte = mySerial.read();
-        if (inbyte == 'S') {
-          post_success = true;
-          Serial.println("post success!");
-        }
-      }
-    }
-  }
-  number_tries =number_tries+1; 
-  delay(50); 
-}
-    }
-    if (post_success == true) {
-      loop_counter = 0 ;
-      Serial.println("Writing loop_counter to eep1");
-      writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, loop_counter);
-    }
-    else {
-      Serial.println("Writing loop_counter to eep1");
-      Serial.println(loop_counter);
-      writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, loop_counter);
-      // save loop_counter to memory
-    }
-    digitalWrite(WIFI_EN, LOW);
-  }
-*/
   long writeEEPROMdouble(int deviceaddress, unsigned int eeaddress, int value)
   {
     //    int value = input[i];

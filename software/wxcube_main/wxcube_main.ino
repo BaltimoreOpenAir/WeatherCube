@@ -1,7 +1,7 @@
 //----------------PREAMBLE-----------------
 //----------------big, important definitions-----------------
 #define SERIAL_ID 15
-#define DEBUG_MODE 0
+#define DEBUG_MODE 1
 #define SEND_DATA false
 int start_hour = 9;
 int start_minute =19;
@@ -140,6 +140,113 @@ byte integer_time[RTC_TS_BITS]; // what we'll store time array in
 char types[] = {"oanbschdtrefgivHmN"};
 // o3 mean, o3 std, no2 mean, no2 std, so2 mean, so2 std, h2s mean, h2s std,
 // temp1, rh1, temp2, rh2, temp3, battery voltage, hour, minute
+
+ void rtc_write_date(int sec, int mint, int hr24, int dotw, int day, int mon, int yr)
+  {
+    Wire.beginTransmission(RTC_ADDR);
+    Wire.write((uint8_t)TIME_REG);
+    Wire.write(dec2bcd(sec) | B10000000);
+    Wire.write(dec2bcd(mint));
+    Wire.write(dec2bcd(hr24)); //hr
+    Wire.write(dec2bcd(dotw) | B00001000); //dotw
+    Wire.write(dec2bcd(day)); //date
+    Wire.write(dec2bcd(mon)); //month
+    Wire.write(dec2bcd(yr)); //year
+
+    Wire.write((byte) 0);
+    //Wire.write((uint8_t)0x00);                     //stops the oscillator (Bit 7, ST == 0)
+    /*
+       Wire.write(dec2bcd(05));
+      Wire.write(dec2bcd(04));                  //sets 24 hour format (Bit 6 == 0)
+      Wire.endTransmission();
+      Wire.beginTransmission(RTC_ADDR);
+      Wire.write((uint8_t)TIME_REG);
+      Wire.write(dec2bcd(30) | _BV(ST));    //set the seconds and start the oscillator (Bit 7, ST == 1)
+    */
+    Wire.endTransmission();
+  }
+ void rtc_read_timestamp(int mode)
+  {
+    byte rtc_out[RTC_TS_BITS];
+    //int integer_time[RTC_TS_BITS];
+    Wire.beginTransmission(RTC_ADDR);
+    Wire.write((byte)0x00);
+    if (Wire.endTransmission() != 0) {
+      Serial.println("no luck");
+      //return false;
+    }
+    else {
+      //request 7 bytes (secs, min, hr, dow, date, mth, yr)
+      Wire.requestFrom(RTC_ADDR, RTC_TS_BITS);
+
+      // cycle through bytes and remove non-time data (eg, 12 hour or 24 hour bit)
+      for (int i = 0; i < RTC_TS_BITS; i++) {
+        rtc_out[i] = Wire.read();
+        if (mode == 0) printBits(rtc_out[i]);
+        else
+        {
+          //byte b = rtc_out[i];
+          if (i == 0) rtc_out[i] &= B01111111;
+          else if (i == 3) rtc_out[i] &= B00000111;
+          else if (i == 5) rtc_out[i] &= B00011111;
+          //int j = bcd2dec(b);
+          //Serial.print(j);
+          //if(i < how_many - 1) Serial.print(",");
+        }
+      }
+    }
+
+    for (int i = 0; i < RTC_TS_BITS ; i++) {
+      int ii = rtc_out[i];
+      integer_time[i] = bcd2dec(ii);
+    }
+  }
+
+  uint8_t dec2bcd(uint8_t n) {
+    return n + 6 * (n / 10);
+  }
+
+  uint8_t bcd2dec(uint8_t n) {
+    return n - 6 * (n >> 4);
+  }
+
+    void printBits(byte myByte) {
+    for (byte mask = 0x80; mask; mask >>= 1) {
+      if (mask  & myByte)
+        Serial.print('1');
+      else
+        Serial.print('0');
+    }
+    Serial.println();
+  }
+
+
+ void writeEEPROM(int deviceaddress, unsigned int eeaddress, byte data )
+  {
+    Wire.beginTransmission(deviceaddress);
+    Wire.write((int)(eeaddress >> 8));   // MSB
+    Wire.write((int)(eeaddress & 0xFF)); // LSB
+    Wire.write(data);
+    Wire.endTransmission();
+
+    delay(10);
+  }
+
+    byte readEEPROM(int deviceaddress, unsigned int eeaddress )
+  {
+    byte rdata = 0xFF;
+
+    Wire.beginTransmission(deviceaddress);
+    Wire.write((int)(eeaddress >> 8));   // MSB
+    Wire.write((int)(eeaddress & 0xFF)); // LSB
+    Wire.endTransmission();
+
+    Wire.requestFrom(deviceaddress, 1);
+
+    if (Wire.available()) rdata = Wire.read();
+
+    return rdata;
+  }
 void do_once() { // do at least once, but not all the time
   //----------------set id----------------
   Serial.println("Doing do_once()");
@@ -159,11 +266,10 @@ void do_once() { // do at least once, but not all the time
     rtc_read_timestamp(0);
     delay(10);
   }
-  else {
   }
   // set gain & save to EEprom
 }
-
+  
 void test_post()
 {
   digitalWrite(WIFI_EN, HIGH);
@@ -389,7 +495,9 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     }
 
     ////-----------save readings------------------
-    Serial.println("Writing data");
+   
+    /*
+     *Serial.println("Writing data");
     // note: should have that eeprom_write_location = loop_counter*32
     // pick which eeprom memory to go to
     // first case: eeprom write location less than size of 1st eepro
@@ -449,7 +557,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
       if (abs((minute - SERIAL_ID)) % 60 < 2 && hour == SEND_HOUR) {
         //Serial.println("time to send data!");
         //Serial.println("Sending data..");
-        if(SEND_DATA) sendData();
+       // if(SEND_DATA) {sendData()};
         //Serial.println("Going back to sleep...") ;
         delay(500);
         // go back to sleep for 4 minutes so we don't double send
@@ -469,11 +577,12 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     Serial.println("Waking up...");
     Serial.println("Looping");
 
-  }*/
+  }
+  */
 
 
   //----------------FUNCTIONS----------------------
-  void sendData() {
+  void sendData(){
     digitalWrite(WIFI_EN, HIGH);
     delay(2000);
     //long one_reading_array[EEPROM_BLOCKSIZE];
@@ -620,22 +729,23 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
     return output;
   }
 
-  byte readEEPROM(int deviceaddress, unsigned int eeaddress )
-  {
-    byte rdata = 0xFF;
+//  byte readEEPROM(int deviceaddress, unsigned int eeaddress )
+//  {
+//    byte rdata = 0xFF;
+//
+//    Wire.beginTransmission(deviceaddress);
+//    Wire.write((int)(eeaddress >> 8));   // MSB
+//    Wire.write((int)(eeaddress & 0xFF)); // LSB
+//    Wire.endTransmission();
+//
+//    Wire.requestFrom(deviceaddress, 1);
+//
+//    if (Wire.available()) rdata = Wire.read();
+//
+//    return rdata;
+//  }
 
-    Wire.beginTransmission(deviceaddress);
-    Wire.write((int)(eeaddress >> 8));   // MSB
-    Wire.write((int)(eeaddress & 0xFF)); // LSB
-    Wire.endTransmission();
-
-    Wire.requestFrom(deviceaddress, 1);
-
-    if (Wire.available()) rdata = Wire.read();
-
-    return rdata;
-  }
-
+/*
   void writeEEPROM(int deviceaddress, unsigned int eeaddress, byte data )
   {
     Wire.beginTransmission(deviceaddress);
@@ -646,7 +756,7 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
 
     delay(10);
   }
-
+*/
   void which_afe(int num)
   {
     digitalWrite(10, HIGH);
@@ -865,83 +975,83 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
   //-----------------------------------
 
 
-  uint8_t dec2bcd(uint8_t n) {
-    return n + 6 * (n / 10);
-  }
+//  uint8_t dec2bcd(uint8_t n) {
+//    return n + 6 * (n / 10);
+//  }
+//
+//  uint8_t bcd2dec(uint8_t n) {
+//    return n - 6 * (n >> 4);
+//  }
 
-  uint8_t bcd2dec(uint8_t n) {
-    return n - 6 * (n >> 4);
-  }
+//  void printBits(byte myByte) {
+//    for (byte mask = 0x80; mask; mask >>= 1) {
+//      if (mask  & myByte)
+//        Serial.print('1');
+//      else
+//        Serial.print('0');
+//    }
+//    Serial.println();
+//  }
 
-  void printBits(byte myByte) {
-    for (byte mask = 0x80; mask; mask >>= 1) {
-      if (mask  & myByte)
-        Serial.print('1');
-      else
-        Serial.print('0');
-    }
-    Serial.println();
-  }
+//  void rtc_write_date(int sec, int mint, int hr24, int dotw, int day, int mon, int yr)
+//  {
+//    Wire.beginTransmission(RTC_ADDR);
+//    Wire.write((uint8_t)TIME_REG);
+//    Wire.write(dec2bcd(sec) | B10000000);
+//    Wire.write(dec2bcd(mint));
+//    Wire.write(dec2bcd(hr24)); //hr
+//    Wire.write(dec2bcd(dotw) | B00001000); //dotw
+//    Wire.write(dec2bcd(day)); //date
+//    Wire.write(dec2bcd(mon)); //month
+//    Wire.write(dec2bcd(yr)); //year
+//
+//    Wire.write((byte) 0);
+//    //Wire.write((uint8_t)0x00);                     //stops the oscillator (Bit 7, ST == 0)
+//    /*
+//       Wire.write(dec2bcd(05));
+//      Wire.write(dec2bcd(04));                  //sets 24 hour format (Bit 6 == 0)
+//      Wire.endTransmission();
+//      Wire.beginTransmission(RTC_ADDR);
+//      Wire.write((uint8_t)TIME_REG);
+//      Wire.write(dec2bcd(30) | _BV(ST));    //set the seconds and start the oscillator (Bit 7, ST == 1)
+//    */
+//    Wire.endTransmission();
+//  }
 
-  void rtc_write_date(int sec, int mint, int hr24, int dotw, int day, int mon, int yr)
-  {
-    Wire.beginTransmission(RTC_ADDR);
-    Wire.write((uint8_t)TIME_REG);
-    Wire.write(dec2bcd(sec) | B10000000);
-    Wire.write(dec2bcd(mint));
-    Wire.write(dec2bcd(hr24)); //hr
-    Wire.write(dec2bcd(dotw) | B00001000); //dotw
-    Wire.write(dec2bcd(day)); //date
-    Wire.write(dec2bcd(mon)); //month
-    Wire.write(dec2bcd(yr)); //year
-
-    Wire.write((byte) 0);
-    //Wire.write((uint8_t)0x00);                     //stops the oscillator (Bit 7, ST == 0)
-    /*
-       Wire.write(dec2bcd(05));
-      Wire.write(dec2bcd(04));                  //sets 24 hour format (Bit 6 == 0)
-      Wire.endTransmission();
-      Wire.beginTransmission(RTC_ADDR);
-      Wire.write((uint8_t)TIME_REG);
-      Wire.write(dec2bcd(30) | _BV(ST));    //set the seconds and start the oscillator (Bit 7, ST == 1)
-    */
-    Wire.endTransmission();
-  }
-
-  void rtc_read_timestamp(int mode)
-  {
-    byte rtc_out[RTC_TS_BITS];
-    //int integer_time[RTC_TS_BITS];
-    Wire.beginTransmission(RTC_ADDR);
-    Wire.write((byte)0x00);
-    if (Wire.endTransmission() != 0) {
-      Serial.println("no luck");
-      //return false;
-    }
-    else {
-      //request 7 bytes (secs, min, hr, dow, date, mth, yr)
-      Wire.requestFrom(RTC_ADDR, RTC_TS_BITS);
-
-      // cycle through bytes and remove non-time data (eg, 12 hour or 24 hour bit)
-      for (int i = 0; i < RTC_TS_BITS; i++) {
-        rtc_out[i] = Wire.read();
-        if (mode == 0) printBits(rtc_out[i]);
-        else
-        {
-          //byte b = rtc_out[i];
-          if (i == 0) rtc_out[i] &= B01111111;
-          else if (i == 3) rtc_out[i] &= B00000111;
-          else if (i == 5) rtc_out[i] &= B00011111;
-          //int j = bcd2dec(b);
-          //Serial.print(j);
-          //if(i < how_many - 1) Serial.print(",");
-        }
-      }
-    }
-
-    for (int i = 0; i < RTC_TS_BITS ; i++) {
-      int ii = rtc_out[i];
-      integer_time[i] = bcd2dec(ii);
-    }
-  }
+//  void rtc_read_timestamp(int mode)
+//  {
+//    byte rtc_out[RTC_TS_BITS];
+//    //int integer_time[RTC_TS_BITS];
+//    Wire.beginTransmission(RTC_ADDR);
+//    Wire.write((byte)0x00);
+//    if (Wire.endTransmission() != 0) {
+//      Serial.println("no luck");
+//      //return false;
+//    }
+//    else {
+//      //request 7 bytes (secs, min, hr, dow, date, mth, yr)
+//      Wire.requestFrom(RTC_ADDR, RTC_TS_BITS);
+//
+//      // cycle through bytes and remove non-time data (eg, 12 hour or 24 hour bit)
+//      for (int i = 0; i < RTC_TS_BITS; i++) {
+//        rtc_out[i] = Wire.read();
+//        if (mode == 0) printBits(rtc_out[i]);
+//        else
+//        {
+//          //byte b = rtc_out[i];
+//          if (i == 0) rtc_out[i] &= B01111111;
+//          else if (i == 3) rtc_out[i] &= B00000111;
+//          else if (i == 5) rtc_out[i] &= B00011111;
+//          //int j = bcd2dec(b);
+//          //Serial.print(j);
+//          //if(i < how_many - 1) Serial.print(",");
+//        }
+//      }
+//    }
+//
+//    for (int i = 0; i < RTC_TS_BITS ; i++) {
+//      int ii = rtc_out[i];
+//      integer_time[i] = bcd2dec(ii);
+//    }
+//  }
 
