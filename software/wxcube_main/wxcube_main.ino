@@ -595,7 +595,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
       //// first pull from EEPROM
       Serial.println(F("Reading from EEPROM at ..."));
       Serial.println(eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE);
-      Serial.println(F("to...");
+      Serial.println(F("to..."));
       Serial.println(eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE + DATA_ARRAY_SIZE * 2 + 1);
 
       long one_reading_array[EEPROM_BLOCKSIZE];
