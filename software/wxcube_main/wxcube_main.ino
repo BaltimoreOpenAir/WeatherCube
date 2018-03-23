@@ -172,7 +172,7 @@ char types[] = {"oanbschdtrefgivHmN"};
     Wire.beginTransmission(RTC_ADDR);
     Wire.write((byte)0x00);
     if (Wire.endTransmission() != 0) {
-      Serial.println("no luck");
+      Serial.println(F("no luck"));
       //return false;
     }
     else {
@@ -249,7 +249,7 @@ char types[] = {"oanbschdtrefgivHmN"};
   }
 void do_once() { // do at least once, but not all the time
   //----------------set id----------------
-  Serial.println("Doing do_once()");
+  Serial.println(F("Doing do_once()"));
   // set id (& save it and EEprom)
   writeEEPROM(EEP0, ID_LOCATION, SERIAL_ID);
   delay(10);
@@ -260,12 +260,11 @@ void do_once() { // do at least once, but not all the time
 
   // set clock & save to rtc
   if (DEBUG_MODE == 1) {
-    Serial.println("setup:");
+    Serial.println(F("setup:"));
     Serial.println(readEEPROM(EEP0, ID_LOCATION), DEC);
     delay(10);
     rtc_read_timestamp(0);
     delay(10);
-  }
   }
   // set gain & save to EEprom
 }
@@ -298,13 +297,13 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     }
     s += "x";
     s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    Serial.println("data to be posted is...") ;
+    Serial.println(F("data to be posted is...")) ;
     Serial.println(s);
     mySerial.write(cbuf);
     mySerial.flush();
     delay(800);
   }
-  Serial.println("posting next set of data..."); 
+  Serial.println(F("posting next set of data...")); 
 
   // hitting limit of 17 fields for dynamodb... adding rest to last field
   String s = "";
@@ -320,7 +319,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
   }
     s += "x";
     s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    Serial.println("rest of data to be posted is...") ;
+    Serial.println(F("rest of data to be posted is..."));
     Serial.println(s);
  
     mySerial.write(cbuf);
@@ -328,7 +327,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     delay(800);
   mySerial.write("px");
   mySerial.flush();
-  Serial.println("Attempted post...");
+  Serial.println(F("Attempted post..."));
   delay(5000);
   long toc = millis();
   //while (millis() - toc < 50000) {
@@ -344,13 +343,13 @@ while (post_success == false && counter < MAX_POST_TRIES ){
         inbyte = mySerial.read();
         if (inbyte == 'S') {
           post_success = true;
-          Serial.println("post success!");
+          Serial.println(F("post success!"));
         }
       }
     }
   }
   counter= counter+1;
-  Serial.println("counter increasing to..."); 
+  Serial.println(F("counter increasing to...")); 
   Serial.println(counter);  
 }
     delay(5000);
@@ -372,7 +371,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
   { // put your setup code here, to run once:
     //  rtc_write_date(0, 20, 12, 3, 30, 8, 17);
     Serial.begin(57600);
-    Serial.println("Starting setup...");
+    Serial.println(F("Starting setup..."));
 
     //----------------pin stuff-----------------
     // define which way pins work and turn on/off
@@ -400,23 +399,23 @@ while (post_success == false && counter < MAX_POST_TRIES ){
       writeEEPROM(EEP0, CHECK_SETUP_INDEX, 0);
     }
     //writeEEPROM(EEP0, CHECK_SETUP_INDEX, 0);
-    Serial.println("finished pin setup");
+    Serial.println(F("finished pin setup"));
     Serial.println(readEEPROM(EEP0, CHECK_SETUP_INDEX));
     int check_variable = readEEPROM(EEP0, CHECK_SETUP_INDEX);
 
     if (check_variable != 57) {
-      Serial.println("Doing initial setup...");
+      Serial.println(F("Doing initial setup..."));
       do_once();
       writeEEPROM(EEP0, CHECK_SETUP_INDEX, 57);
       writeEEPROM(EEP0, EEP_WRITE_LOCATION_INDEX, 64); 
       writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, 0); 
     }
     else {
-      Serial.println("Initial setup already completed");
+      Serial.println(F("Initial setup already completed"));
       loop_counter = readEEPROM(EEP1, LOOP_COUNTER_LOCATION);
       eeprom_write_location = readEEPROM(EEP1, EEP_WRITE_LOCATION_INDEX);
     }
-    Serial.println("check variable completed");
+    Serial.println(F("check variable completed"));
   
 
     //----------------set adc/gain stuff-----------------
@@ -465,7 +464,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     //----------------set clock-----------------
     //rtc_write_date(0, 10, 9, 7, 28, 8, 17); // note: rename function to in order of the time registers in the memory of the rtc
     // second, minute, hour, day of the week, day, month, year
-    Serial.println("setup completed");
+    Serial.println(F("setup completed"));
     digitalWrite(WIFI_EN, LOW);
   }
 
@@ -475,21 +474,21 @@ while (post_success == false && counter < MAX_POST_TRIES ){
   { long toc = millis();
 
     //----------------fan on-----------------
-    Serial.println("fan on");
+    Serial.println(F("fan on"));
     //digitalWrite(FAN_EN, HIGH);  delay(FAN_INTERVAL);
     // turn fan off and wait for anything trapped in inductive coils to discharge
     //digitalWrite(FAN_EN, LOW);  delay(2000);
     ////-----------take readings------------------
 
-    Serial.println("Taking data...") ;
+    Serial.println(F("Taking data..."));
     read_data(); // note: updates data_array
     // sensor 1, sensor 2, sensor 3, sensor4, temp, rh, temp, rh temp, rh,
-    Serial.println("looping for testing...");
+    Serial.println(F("looping for testing..."));
     delay(1000);
   
   
     // note: have 4 more bytes, maybe can add timestamp?
-    Serial.println("Data taken is...");
+    Serial.println(F("Data taken is..."));
     for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
       Serial.println(data_array[i]);
     }
@@ -576,9 +575,9 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     }
     Serial.println("Waking up...");
     Serial.println("Looping");
-
+*/
   }
-  */
+  
 
 
   //----------------FUNCTIONS----------------------
@@ -589,14 +588,14 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     bool post_success;
     for (int reading_counter = loop_counter; reading_counter > 1; reading_counter--) {
       post_success = false;
-      Serial.print("Sending reading number ");
+      Serial.print(F("Sending reading number "));
       Serial.print(reading_counter);
       delay(50);
 
       //// first pull from EEPROM
-      Serial.println("Reading from EEPROM at ...");
+      Serial.println(F("Reading from EEPROM at ..."));
       Serial.println(eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE);
-      Serial.println("to...");
+      Serial.println(F("to...");
       Serial.println(eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE + DATA_ARRAY_SIZE * 2 + 1);
 
       long one_reading_array[EEPROM_BLOCKSIZE];
@@ -607,7 +606,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
         delay(50);
       }
 
-      Serial.println("Data from EEPROM is...");
+      Serial.println(F("Data from EEPROM is..."));
       for (int i = 0; i < DATA_ARRAY_SIZE; i++) {
         Serial.println(one_reading_array[i]);
       }
@@ -631,13 +630,13 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     }
     s += "x";
     s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    Serial.println("data to be posted is...") ;
+    Serial.println(F("data to be posted is..."));
     Serial.println(s);
     mySerial.write(cbuf);
     mySerial.flush();
     delay(800);
   }
-  Serial.println("posting next set of data..."); 
+  Serial.println(F("posting next set of data...")); 
 
   // hitting limit of 17 fields for dynamodb... adding rest to last field
   String s = "";
@@ -653,7 +652,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
   }
     s += "x";
     s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    Serial.println("rest of data to be posted is...") ;
+    Serial.println(F("rest of data to be posted is..."));
     Serial.println(s);
  
     mySerial.write(cbuf);
@@ -680,7 +679,7 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
         inbyte = mySerial.read();
         if (inbyte == 'S') {
           post_success = true;
-          Serial.println("post success!");
+          Serial.println(F("post success!"));
         }
       }
     }
@@ -691,11 +690,11 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
     }
     if (post_success == true) {
       loop_counter = 0 ;
-      Serial.println("Writing loop_counter to eep1");
+      Serial.println(F("Writing loop_counter to eep1"));
       writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, loop_counter);
     }
     else {
-      Serial.println("Writing loop_counter to eep1");
+      Serial.println(F("Writing loop_counter to eep1"));
       Serial.println(loop_counter);
       writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, loop_counter);
       // save loop_counter to memory
@@ -796,7 +795,7 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
   //-----------------------------------
   void read_data()
   {
-    Serial.println("Setting VREF HIGH");
+    Serial.println(F("Setting VREF HIGH"));
     digitalWrite(VREF_EN, HIGH);
     delay(100);
     int number_reads = 0;
