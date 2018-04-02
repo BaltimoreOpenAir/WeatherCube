@@ -2,7 +2,7 @@
 //----------------big, important definitions-----------------
 #define SERIAL_ID 15
 #define DEBUG_MODE 1
-#define SEND_DATA false
+#define SEND_DATA true
 int start_hour = 9;
 int start_minute =19;
 int start_day = 6;
@@ -495,8 +495,8 @@ while (post_success == false && counter < MAX_POST_TRIES ){
 
     ////-----------save readings------------------
    
-    /*
-     *Serial.println("Writing data");
+    
+    Serial.println("Writing data");
     // note: should have that eeprom_write_location = loop_counter*32
     // pick which eeprom memory to go to
     // first case: eeprom write location less than size of 1st eepro
@@ -575,7 +575,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     }
     Serial.println("Waking up...");
     Serial.println("Looping");
-*/
+
   }
   
 
