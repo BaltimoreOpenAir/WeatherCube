@@ -174,7 +174,7 @@ These instructions are courtesy Daniele Salvagni at https://github.com/daniele-s
 
 ### 1. Create an AWS account
 
-Create an account at https://aws.amazon.com/. Note this requires a credit card but it's possible to be on AWS' free tier. You may also qualify for educational credits. 
+Create an account at https://aws.amazon.com/. Note this requires a credit card but it's possible to be on AWS' free tier. You may also qualify for educational credits. Follow along steps 1 and 2 using the instructions in http://ncar.github.io/chords/aws.html . Get your awsKeyID and awsSecKey using instructions in:  https://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html . 
 
 ### 2. Set up the DynamoDB Table
 
