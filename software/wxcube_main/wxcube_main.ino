@@ -563,7 +563,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
       if (abs((minute - SERIAL_ID)) % 60 < 2 && hour == SEND_HOUR) {
         //Serial.println("time to send data!");
         //Serial.println("Sending data..");
-       // if(SEND_DATA) {sendData()};
+       if(SEND_DATA) {sendData()};
         //Serial.println("Going back to sleep...") ;
         delay(500);
         // go back to sleep for 4 minutes so we don't double send
