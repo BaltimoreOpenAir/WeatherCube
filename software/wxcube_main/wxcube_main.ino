@@ -23,7 +23,6 @@ bool reset = false; // whether to reset eeprom; always rerun
 #include "Adafruit_SHT31.h"
 #include <EEPROM.h>
 #include "LowPower.h"
-
 //#include "keys.h" // wifi passwords, amazon table details, serial id
 
 //--------------- definitions-----------------
@@ -283,91 +282,91 @@ void test_post()
       Serial.write(mySerial.read());
     }
   }
-bool post_success =  false; 
-int counter = 0; 
-while (post_success == false && counter < MAX_POST_TRIES ){
-  //// send data to AWS
-  char cbuf[25];
-  for (int i = 0; i < 14; i++) { //DATA_ARRAY_SIZE; i++) {
-    String s = "";
-    s += types[i];
-    if ( one_reading_array[i] == -32768) {
-      s += "NaN"; //"NaN";
-    }
-    else {
-      s += String(one_reading_array[i]);
-    }
-    s += "x";
-    s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    Serial.println(F("data to be posted is...")) ;
-    Serial.println(s);
-    mySerial.write(cbuf);
-    mySerial.flush();
-    delay(800);
-  }
-  Serial.println(F("posting next set of data...")); 
-
-  // hitting limit of 17 fields for dynamodb... adding rest to last field
-  String s = "";
-  s += types[14];
-  for (int i = 14; i < DATA_ARRAY_SIZE; i++) { //DATA_ARRAY_SIZE; i++) {
-    if ( one_reading_array[i] == -32768) {
-      s += "NaN"; //"NaN";
-    }
-    else {
-      s += String(one_reading_array[i]);
-    }
-        s += ",";
-  }
-    s += "x";
-    s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
-    Serial.println(F("rest of data to be posted is..."));
-    Serial.println(s);
- 
-    mySerial.write(cbuf);
-    mySerial.flush();
-    delay(800);
-  mySerial.write("px");
-  mySerial.flush();
-  Serial.println(F("Attempted post..."));
-  delay(5000);
-  long toc = millis();
-  //while (millis() - toc < 50000) {
-  //int counter = 0;
-  // while (counter < 25){
-  if (mySerial.available()) {
-    while (mySerial.available()) { // & counter < 50) {
-      inbyte = mySerial.read();
-      //Serial.write(mySerial.read());
-      Serial.write(inbyte);
-      delay(30);
-      if (inbyte == '#') {
-        inbyte = mySerial.read();
-        if (inbyte == 'S') {
-          post_success = true;
-          Serial.println(F("post success!"));
-        }
+  bool post_success =  false; 
+  int counter = 0; 
+  while (post_success == false && counter < MAX_POST_TRIES ){
+    //// send data to AWS
+    char cbuf[25];
+    for (int i = 0; i < 14; i++) { //DATA_ARRAY_SIZE; i++) {
+      String s = "";
+      s += types[i];
+      if ( one_reading_array[i] == -32768) {
+        s += "NaN"; //"NaN";
       }
+      else {
+        s += String(one_reading_array[i]);
+      }
+      s += "x";
+      s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
+      Serial.println(F("data to be posted is...")) ;
+      Serial.println(s);
+      mySerial.write(cbuf);
+      mySerial.flush();
+      delay(800);
     }
-  }
-  counter= counter+1;
-  Serial.println(F("counter increasing to...")); 
-  Serial.println(counter);  
-}
+    Serial.println(F("posting next set of data...")); 
+  
+    // hitting limit of 17 fields for dynamodb... adding rest to last field
+    String s = "";
+    s += types[14];
+    for (int i = 14; i < DATA_ARRAY_SIZE; i++) { //DATA_ARRAY_SIZE; i++) {
+      if ( one_reading_array[i] == -32768) {
+        s += "NaN"; //"NaN";
+      }
+      else {
+        s += String(one_reading_array[i]);
+      }
+          s += ",";
+    }
+      s += "x";
+      s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
+      Serial.println(F("rest of data to be posted is..."));
+      Serial.println(s);
+   
+      mySerial.write(cbuf);
+      mySerial.flush();
+      delay(800);
+    mySerial.write("px");
+    mySerial.flush();
+    Serial.println(F("Attempted post..."));
     delay(5000);
     long toc = millis();
-    while (millis() - toc < 15000) {
-      int counter = 0;
-      if (mySerial.available()) {
-        while (mySerial.available()) { // & counter < 50) {
-          Serial.write(mySerial.read());
-          delay(500);
-          counter++ ;
+    //while (millis() - toc < 50000) {
+    //int counter = 0;
+    // while (counter < 25){
+    if (mySerial.available()) {
+      while (mySerial.available()) { // & counter < 50) {
+        inbyte = mySerial.read();
+        //Serial.write(mySerial.read());
+        Serial.write(inbyte);
+        delay(30);
+        if (inbyte == '#') {
+          inbyte = mySerial.read();
+          if (inbyte == 'S') {
+            post_success = true;
+            Serial.println(F("post success!"));
+          }
         }
       }
     }
-    digitalWrite(WIFI_EN, LOW);
+    counter= counter+1;
+    Serial.println(F("counter increasing to...")); 
+    Serial.println(counter);  
   }
+  delay(5000);
+  long toc = millis();
+  while (millis() - toc < 15000) {
+    int counter = 0;
+    if (mySerial.available()) {
+      while (mySerial.available()) { // & counter < 50) {
+        Serial.write(mySerial.read());
+        delay(500);
+        counter++ ;
+      }
+    }
+  }
+  digitalWrite(WIFI_EN, LOW);
+}
 
   void setup()
   {
@@ -560,10 +559,10 @@ while (post_success == false && counter < MAX_POST_TRIES ){
       hour = integer_time[2];
       //if (minute % 2 == 1) { // && hour == SEND_HOUR {
       //    if (abs((minute-SERIAL_ID)%60) < 2){ // && hour == SEND_HOUR {
-      if (abs((minute - SERIAL_ID)) % 60 < 2 && hour == SEND_HOUR) {
+      //if (abs((minute - SERIAL_ID)) % 60 < 2 && hour == SEND_HOUR) {
         //Serial.println("time to send data!");
         //Serial.println("Sending data..");
-       if(SEND_DATA) {sendData()};
+       if(SEND_DATA) {sendData();}
         //Serial.println("Going back to sleep...") ;
         delay(500);
         // go back to sleep for 4 minutes so we don't double send
@@ -574,7 +573,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
         writeEEPROM(EEP1, EEP_WRITE_LOCATION_INDEX, eeprom_write_location);
         rtc_read_timestamp(1);
         minute = integer_time[1];
-      }
+      //}
       Serial.println("time difference is...") ;
       Serial.println(abs((minute - minute_0) % 60)) ;
       delay(50);
@@ -840,7 +839,7 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
           // read the channel and convert to millivolts
           long toc2 = millis();
           float a = convert_to_mv(ads.readADC_SingleEnded(channel));
-          Serial.println(read_count++);
+          //Serial.println(read_count++);
           // add that to the statistics objec
           delay(5);
           if (channel % 4 == 0) {
@@ -1060,4 +1059,5 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
 //      integer_time[i] = bcd2dec(ii);
 //    }
 //  }
+
 
