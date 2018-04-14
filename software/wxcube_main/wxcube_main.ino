@@ -3,11 +3,13 @@
 #define SERIAL_ID 15
 #define DEBUG_MODE 1
 #define SEND_DATA true
-int start_hour = 9;
-int start_minute =19;
-int start_day = 6;
-int start_day_of_week = 4; // sunday is 0; 
-int start_month = 9;
+int start_second = 0;
+int start_hour = 21;
+int start_minute = 2;
+int start_day_of_week = 5; // sunday is 0; 
+int start_day = 13;
+int start_month = 4;
+int start_year = 18;
 bool reset = false; // whether to reset eeprom; always rerun
 
 // # define INITIAL_DATE
@@ -368,8 +370,7 @@ while (post_success == false && counter < MAX_POST_TRIES ){
   }
 
   void setup()
-  { // put your setup code here, to run once:
-    //  rtc_write_date(0, 20, 12, 3, 30, 8, 17);
+  {
     Serial.begin(57600);
     Serial.println(F("Starting setup..."));
 
@@ -394,6 +395,12 @@ while (post_success == false && counter < MAX_POST_TRIES ){
     delay(100);
     mySerial.begin(9600);
     Wire.begin();
+
+//SETTING RTC MANUALLY:
+    //rtc_write_date(start_second, start_minute, start_hour, start_day_of_week, start_day, start_month, start_year);
+
+
+    
 // to reset...
     if (reset== true){
       writeEEPROM(EEP0, CHECK_SETUP_INDEX, 0);
