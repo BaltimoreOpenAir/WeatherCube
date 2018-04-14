@@ -2,7 +2,7 @@
 //----------------big, important definitions-----------------
 #define SERIAL_ID 15
 #define DEBUG_MODE 1
-#define SEND_DATA true
+#define SEND_DATA false
 int start_second = 0;
 int start_hour = 21;
 int start_minute = 2;
@@ -418,7 +418,7 @@ void test_post()
     }
     else {
       Serial.println(F("Initial setup already completed"));
-      loop_counter = readEEPROM(EEP1, LOOP_COUNTER_LOCATION);
+//      loop_counter = readEEPROM(EEP1, LOOP_COUNTER_LOCATION);
       eeprom_write_location = readEEPROM(EEP1, EEP_WRITE_LOCATION_INDEX);
     }
     Serial.println(F("check variable completed"));
@@ -540,10 +540,10 @@ void test_post()
     // deep sleep
     // note: millis() won't count up while in 'deep sleep' mode or idle mode
     delay(500);
-//    rtc_read_timestamp(1);
-//    int minute_0 = integer_time[1];
-//    int minute = integer_time[1];
-//    int hour;
+    rtc_read_timestamp(1);
+    int minute_0 = integer_time[1];
+    int minute = integer_time[1];
+    int hour;
 //  if(DEBUG_MODE == 1){
 //    Serial.println("Sleeping...");
 //    while ( abs((minute - minute_0)) % 60 < SLEEP_MINUTES) {
@@ -578,7 +578,7 @@ void test_post()
       //Serial.println(abs((minute - minute_0) % 60)) ;
       delay(50);
       // deep sleep
-    }
+   // }
     Serial.println("Waking up...");
     Serial.println("Looping");
 
@@ -599,6 +599,12 @@ void test_post()
       delay(50);
 
       //// first pull from EEPROM
+      Serial.println(" eeprom_write_location : " );
+      Serial.println(eeprom_write_location);
+
+      Serial.println("reading_counter : ");
+      Serial.println(reading_counter);
+
       Serial.println(F("Reading from EEPROM at ..."));
       Serial.println(eeprom_write_location - reading_counter * EEPROM_BLOCKSIZE);
       Serial.println(F("to..."));
@@ -838,7 +844,8 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
         for (int channel = 0; channel < 4; channel++) {
           // read the channel and convert to millivolts
           long toc2 = millis();
-          float a = convert_to_mv(ads.readADC_SingleEnded(channel));
+          //float a = convert_to_mv(ads.readADC_SingleEnded(channel));
+          float a = ads.readADC_SingleEnded(channel);
           //Serial.println(read_count++);
           // add that to the statistics objec
           delay(5);
@@ -1059,5 +1066,4 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
 //      integer_time[i] = bcd2dec(ii);
 //    }
 //  }
-
 
