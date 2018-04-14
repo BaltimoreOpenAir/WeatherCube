@@ -540,20 +540,20 @@ void test_post()
     // deep sleep
     // note: millis() won't count up while in 'deep sleep' mode or idle mode
     delay(500);
-    rtc_read_timestamp(1);
-    int minute_0 = integer_time[1];
-    int minute = integer_time[1];
-    int hour;
-  if(DEBUG_MODE == 1){
-    Serial.println("Sleeping...");
-    while ( abs((minute - minute_0)) % 60 < SLEEP_MINUTES) {
-      Serial.println("entering deep sleep mode");
-      delay(500);
-      for (int i = 0; i < 7; i++) {
-        LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
-                      SPI_OFF, USART0_OFF, TWI_OFF);
-      }
-   }
+//    rtc_read_timestamp(1);
+//    int minute_0 = integer_time[1];
+//    int minute = integer_time[1];
+//    int hour;
+//  if(DEBUG_MODE == 1){
+//    Serial.println("Sleeping...");
+//    while ( abs((minute - minute_0)) % 60 < SLEEP_MINUTES) {
+//      Serial.println("entering deep sleep mode");
+//      delay(500);
+//      for (int i = 0; i < 7; i++) {
+//        LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
+//                      SPI_OFF, USART0_OFF, TWI_OFF);
+//      }
+//   }
       rtc_read_timestamp(1);
       minute = integer_time[1];
       hour = integer_time[2];
@@ -566,16 +566,16 @@ void test_post()
         //Serial.println("Going back to sleep...") ;
         delay(500);
         // go back to sleep for 4 minutes so we don't double send
-        for (int i = 0; i < 7 * 3; i++) {
-          LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
-                        SPI_OFF, USART0_OFF, TWI_OFF);
-        }
+//        for (int i = 0; i < 7 * 3; i++) {
+//          LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
+//                        SPI_OFF, USART0_OFF, TWI_OFF);
+//        }
         writeEEPROM(EEP1, EEP_WRITE_LOCATION_INDEX, eeprom_write_location);
         rtc_read_timestamp(1);
         minute = integer_time[1];
       //}
       Serial.println("time difference is...") ;
-      Serial.println(abs((minute - minute_0) % 60)) ;
+      //Serial.println(abs((minute - minute_0) % 60)) ;
       delay(50);
       // deep sleep
     }
