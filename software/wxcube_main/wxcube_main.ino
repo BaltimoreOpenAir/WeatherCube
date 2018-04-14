@@ -787,8 +787,8 @@ while (post_success == false && number_tries < MAX_POST_TRIES) {  mySerial.write
     }
     which_afe(num);
     delay(100);
+    uint8_t res = configure_LMP91000(analyte);
     if(DEBUG_MODE == 0){
-      uint8_t res = configure_LMP91000(analyte);
       Serial.println(F("done"));
       Serial.print(F("Config Result: "));    Serial.println(res);
       Serial.print(F("STATUS: "));    Serial.println(lmp91000.read(LMP91000_STATUS_REG), HEX);
