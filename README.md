@@ -200,6 +200,9 @@ You will need to create and add `keys.h` and `keys.cpp` into the `AWSArduinoSDK`
 
 extern const char* awsKeyID;  // Declare these variables to
 extern const char* awsSecKey; // be accessible by the sketch
+extern const char* pSSID; 
+extern const char* pPassword; 
+extern const char* SERIAL_ID;
 
 #endif
 ```
@@ -210,6 +213,9 @@ extern const char* awsSecKey; // be accessible by the sketch
 
 const char* awsKeyID = "YOUR AWS KEY ID HERE";
 const char* awsSecKey = "YOUR AWS SECRET KEY HERE";
+extern const char* pSSID = "YOUR WIFI NETWORK NAME HERE"; 
+extern const char* pPassword = "YOUR PASSWORD HERE"; 
+extern const char* SERIAL_ID = "ID NUMBER HERE";
 ```
 
 *Do not share your AWS keys with anyone, it is reccomended to create a dedicated user with restricted permissions, do not use your root account. If you accidentally push your keys online disable them immediatly from the [AWS IAM console](https://console.aws.amazon.com/iam/home)*
