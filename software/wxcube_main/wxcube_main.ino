@@ -544,41 +544,41 @@ void test_post()
     int minute_0 = integer_time[1];
     int minute = integer_time[1];
     int hour;
-//  if(DEBUG_MODE == 1){
-//    Serial.println("Sleeping...");
-//    while ( abs((minute - minute_0)) % 60 < SLEEP_MINUTES) {
-//      Serial.println("entering deep sleep mode");
-//      delay(500);
-//      for (int i = 0; i < 7; i++) {
-//        LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
-//                      SPI_OFF, USART0_OFF, TWI_OFF);
-//      }
-//   }
+  if(DEBUG_MODE == 1){
+    Serial.println("Sleeping...");
+    while ( abs((minute - minute_0)) % 60 < SLEEP_MINUTES) {
+      Serial.println("entering deep sleep mode");
+      delay(500);
+      for (int i = 0; i < 7; i++) {
+        LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
+                      SPI_OFF, USART0_OFF, TWI_OFF);
+      }
+   }
       rtc_read_timestamp(1);
       minute = integer_time[1];
       hour = integer_time[2];
       //if (minute % 2 == 1) { // && hour == SEND_HOUR {
       //    if (abs((minute-SERIAL_ID)%60) < 2){ // && hour == SEND_HOUR {
-      //if (abs((minute - SERIAL_ID)) % 60 < 2 && hour == SEND_HOUR) {
+      if (abs((minute - SERIAL_ID)) % 60 < 2 && hour == SEND_HOUR) {
         //Serial.println("time to send data!");
         //Serial.println("Sending data..");
        if(SEND_DATA) {sendData();}
         //Serial.println("Going back to sleep...") ;
         delay(500);
         // go back to sleep for 4 minutes so we don't double send
-//        for (int i = 0; i < 7 * 3; i++) {
-//          LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
-//                        SPI_OFF, USART0_OFF, TWI_OFF);
-//        }
+        for (int i = 0; i < 7 * 3; i++) {
+          LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
+                        SPI_OFF, USART0_OFF, TWI_OFF);
+        }
         writeEEPROM(EEP1, EEP_WRITE_LOCATION_INDEX, eeprom_write_location);
         rtc_read_timestamp(1);
         minute = integer_time[1];
-      //}
+      }
       Serial.println("time difference is...") ;
       //Serial.println(abs((minute - minute_0) % 60)) ;
       delay(50);
       // deep sleep
-   // }
+   }
     Serial.println("Waking up...");
     Serial.println("Looping");
 
