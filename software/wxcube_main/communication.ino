@@ -1,9 +1,15 @@
-bool is_reporting_time(){
-  rtc_read_timestamp(1);
-  if(last_hour != integer_time[2]){
-    int report_minute = SERIAL_ID % 100;
-    if(abs(report_minute - integer_time[1]) < (MEASUREMENT_SECONDS / 60) + 1){
-      last_hour = integer_time[2];
+bool is_reporting_time(bool report_by_time){
+  if(report_by_time){
+    rtc_read_timestamp(1);
+    if(last_hour != integer_time[2]){
+      int report_minute = SERIAL_ID % 100;
+      if(abs(report_minute - integer_time[1]) < (MEASUREMENT_SECONDS / 60) + 1){
+        last_hour = integer_time[2];
+        return true;
+      }
+    }
+  }else{
+    if(cache >= DEBUG_READS_PER_POST){
       return true;
     }
   }

@@ -6,6 +6,8 @@
 #define DO_SETUP_TEST_POST true
 #define DEBUG_CONTINUOUS false
 #define DEBUG_FAN_OFF true
+#define DEBUG_READS_PER_POST 3
+#define POST_HOURLY true
 #define VERBOSE_SERIAL true
 
 #define MEASUREMENT_SECONDS 60
@@ -250,9 +252,10 @@ void read_data()
   float a = 0;
   float scaler = 1;
   Serial.println(F("air quality reads..."));
-  while (millis() - toc < MEASUREMENT_SECONDS * 1000) {
+  long measure_ms = long(MEASUREMENT_SECONDS) * 1000;
+  while (millis() - toc < (measure_ms)) {
     long toc2 = millis();
-    if(VERBOSE_SERIAL) {Serial.print(millis());Serial.print(": ");}
+    if(VERBOSE_SERIAL) {Serial.print(millis() - toc);Serial.print(": ");}
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
       a = ads.readADC_SingleEnded(i); delay(10);
       stat[i].add(scaler * a);
@@ -426,7 +429,7 @@ void process_data()
       if(VERBOSE_SERIAL){ print_readable_timestamp(); }
 
       //if(DO_SEND_DATA && cache > 2){
-      if (is_reporting_time()) {
+      if (is_reporting_time(POST_HOURLY)) {
         digitalWrite(FAN_EN, LOW);
         delay(500);
         //if(DO_SEND_DATA) {
