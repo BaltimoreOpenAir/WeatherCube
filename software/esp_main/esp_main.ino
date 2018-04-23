@@ -16,7 +16,7 @@
 #define HOUR  15
 #define MONTH   16
 #define READS   17
-
+#define FIELDS_COUNT 18
 
 //#define SERIAL_ID 0
 //#define NUMBER_SAVES_LOCATION 3 // location of byte where the number of saves is 
@@ -24,7 +24,7 @@
 #define MAX_MESSAGE_LENGTH 35
 #define DEBUG_MODE 1
 
-#include <ESP8266WiFi.h>
+#include "ESP8266WiFi.h"
 #include "Esp8266AWSImplementations.h"
 #include "AmazonDynamoDBClient.h"
 #include "AWSFoundationalTypes.h"
@@ -40,8 +40,9 @@ const char* AWS_ENDPOINT = "amazonaws.com";
 // Init and connect Esp8266 WiFi to local wlan
 //const char* pSSID = "Samsung Galaxy S 5 3120"; // REPLACE with your network SSID (name)
 //const char* pPassword = "102867nola"; // REPLACE with your network password (use for WPA, or use as key for WEP)
-//const char* pSSID = "linksys"; // REPLACE with your network SSID (name)
-//const char* pPassword = ""; // REPLACE with your network password (use for WPA, or use as key for WEP)
+const char* pSSID = "[NETWORK]"; // REPLACE with your network SSID (name)
+const char* pPassword = "[PASSWORD]"; // REPLACE with your network password (use for WPA, or use as key for WEP)
+const char* SERIAL_ID = "17";
 
 // Constants describing DynamoDB table and values being used
 const char* TABLE_NAME =  "BaltimoreOpenAir2017"; // "ESP8266AWSDemo";//
@@ -68,17 +69,22 @@ PutItemInput putItemInput;
 AttributeValue hashKey;
 AttributeValue rangeKey; 
 ActionError actionError;
+AttributeValue tempAV1;
+//AttributeValue o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, humAV3, battAV, hour, month, reads; // o3AV, no2AV, so2AV, h2sAV;
+AttributeValue attributes[FIELDS_COUNT];// = {o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, humAV3, battAV, hour, month, reads};
+char attributes_names[][FIELDS_COUNT] = {"O3_avg", "O3_std", "NO2_avg", "NO2_std", "SO2_avg", "SO2_std", "H2S_avg", "H2S_std", "temp1", "hum1", "temp2", "hum2", "temp3", "hum3", "battAV", "hour", "month", "reads"};
 
-AttributeValue o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, humAV3, battAV, hour, month, reads; // o3AV, no2AV, so2AV, h2sAV;
-//AttributeValue attributes[] = {tempAV, humAV, battAV, o3AV, no2AV, so2AV, h2sAV};
-AttributeValue attributes[] = {o3AV_avg, o3AV_std, no2AV_avg, no2AV_std, so2AV_avg, so2AV_std, h2sAV_avg, h2sAV_std, tempAV1, humAV1, tempAV2, humAV2, tempAV3, humAV3, battAV, hour, month, reads};
-//char attributes_names[][5] = {"temp", "hum", "batt", "o3", "no2", "so2", "h2s"};
-char attributes_names[][19] = {"O3_avg", "O3_std", "NO2_avg", "NO2_std", "SO2_avg", "SO2_std", "H2S_avg", "H2S_std", "temp1", "hum1", "temp2", "hum2", "temp3", "hum3", "battAV", "hour", "month", "reads"};
+AttributeValue id;
+AttributeValue timest;
+MinimalKeyValuePair <MinimalString, AttributeValue> itemArray[17];// = {att1, att2, att3, att4, att5, att6, att7, att8, att9, att10, att11, att12, att13, att14, att15, att16, att17};
 
 void setup() {
   Serial.begin(9600);
   Serial.println("testing");
-  tempAV1.setS("-9999");
+  
+  for(int i = 0; i < FIELDS_COUNT; i++){
+    attributes[i].setS("-9999");
+  }
   WiFi.hostname("ESP8266");
   WiFi.begin(pSSID, pPassword);
   delay(100);
@@ -94,30 +100,7 @@ void setup() {
   //wait a short period for the wifi to connect
   //we'll take arguments from the atmega in the meantime if the connection process is slow
   check_or_wait_for_wifi(1000);
-  Serial.println("Setup completed");
-}
-
-void initialize_wifi() { //Initialize ddbClient.
-  ddbClient.setAWSRegion(AWS_REGION);
-  ddbClient.setAWSEndpoint(AWS_ENDPOINT);
-  ddbClient.setAWSSecretKey(awsSecKey);
-  ddbClient.setAWSKeyID(awsKeyID);
-  ddbClient.setHttpClient(&httpClient);
-  ddbClient.setDateTimeProvider(&dateTimeProvider);
-  //Serial.println("wifi initialized...");
-}
-
-bool check_or_wait_for_wifi(int max_wait_ms) {
-  unsigned long timer = millis();
-  if (wifi_connected) return true;
-  while (millis() - timer < max_wait_ms) {
-    if (WiFi.status() == WL_CONNECTED) {
-      wifi_connected = true;
-      initialize_wifi();
-      return true;
-    }
-  }
-  return false;
+  Serial.println("Wifi setup completed");
 }
 
 void loop() {
@@ -187,6 +170,10 @@ void loop() {
         }
         // FILL OUT
         else if (cbuf[0] == 'p') {
+          if(debug_mode){
+            Serial.println("Will try to post...");
+            delay(100);
+          }
           if (check_or_wait_for_wifi(10000)) {
             if (!did_dummy_post) {
               postToAWS(did_dummy_post, false);
@@ -195,7 +182,9 @@ void loop() {
             postToAWS(did_dummy_post, true);
           }
           else {
-            Serial.println("cannot connect to AWS at this time...");
+            if(debug_mode){
+              Serial.println("cannot connect to AWS at this time...");
+            }
           }
         }
       }
@@ -210,17 +199,36 @@ void loop() {
 }
 
 //-------FUNCTIONS----------------
+bool check_or_wait_for_wifi(long max_wait_ms) {
+  unsigned long timer = millis();
+  if (wifi_connected) return true;
+  while (millis() - timer < max_wait_ms) {
+    if (WiFi.status() == WL_CONNECTED) {
+      wifi_connected = true;
+      initialize_wifi();
+      return true;
+    }
+    delay(100);
+    Serial.println(millis());
+  }
+  return false;
+}
+
+void initialize_wifi() { //Initialize ddbClient.
+  ddbClient.setAWSRegion(AWS_REGION); delay(100);
+  ddbClient.setAWSEndpoint(AWS_ENDPOINT); delay(100);
+  ddbClient.setAWSSecretKey(awsSecKey); delay(100);
+  ddbClient.setAWSKeyID(awsKeyID); delay(100);
+  ddbClient.setHttpClient(&httpClient); delay(100);
+  ddbClient.setDateTimeProvider(&dateTimeProvider); delay(100);
+  //Serial.println("wifi initialized...");
+}
+
 void get_message(char m[], char c[]) {
   for (int i = 1; i < MAX_MESSAGE_LENGTH; i++) {
     m[i - 1] = c[i];
   }
 }
-
-//void get_message(char m[], char c[]) {
-//  for (int i = 2; i < MAX_MESSAGE_LENGTH; i++) {
-//    m[i - 2] = c[i];
-//  }
-//}
 
 void setParameter(char m[], int attribute_index, bool verboz) { //parse param value recognized in serial stream
   get_message(m, cbuf);
@@ -240,7 +248,7 @@ void postToAWS(bool not_dummy, bool verboz) {
   AttributeValue id;
   id.setS(SERIAL_ID);
 
-//  id.setS(HASH_KEY_VALUE);
+//id.setS(HASH_KEY_VALUE);
   AttributeValue timest;
   timest.setN(dateTimeProvider.getDateTime());
   if (not_dummy && verboz) {
@@ -248,44 +256,18 @@ void postToAWS(bool not_dummy, bool verboz) {
     Serial.println(dateTimeProvider.getDateTime());
   }
 
-  /* Create the Key-value pairs and make an array of them. */
-  MinimalKeyValuePair <MinimalString, AttributeValue> att1(HASH_KEY_NAME, id);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att2(RANGE_KEY_NAME, timest);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att3(attributes_names[O3], attributes[O3]);// "o3_avg", o3AV_avg);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att4(attributes_names[O3_STD], attributes[O3_STD]);
-  //MinimalKeyValuePair <MinimalString, AttributeValue> att5("no2_avg", no2AV_avg);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att5(attributes_names[NO2], attributes[NO2]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att6(attributes_names[NO2_STD], attributes[NO2_STD]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att7(attributes_names[SO2], attributes[SO2]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att8(attributes_names[SO2_STD], attributes[SO2_STD]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att9(attributes_names[H2S], attributes[H2S]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att10(attributes_names[H2S_STD], attributes[H2S_STD]);
-
-  MinimalKeyValuePair <MinimalString, AttributeValue> att11(attributes_names[TEMP1], attributes[TEMP1]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att12(attributes_names[HUM1], attributes[HUM1]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att13(attributes_names[TEMP2], attributes[TEMP2]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att14(attributes_names[HUM2], attributes[HUM2]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att15(attributes_names[TEMP3], attributes[TEMP3]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att16(attributes_names[HUM3], attributes[HUM3]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att17(attributes_names[BATT], attributes[BATT]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att18(attributes_names[HOUR], attributes[HOUR]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att19(attributes_names[MONTH], attributes[MONTH]);
-  MinimalKeyValuePair <MinimalString, AttributeValue> att20(attributes_names[READS], attributes[READS]);
-  //change these to match TEMP above
-  //  MinimalKeyValuePair <MinimalString, AttributeValue> att4("batt", battAV);
-  //  MinimalKeyValuePair <MinimalString, AttributeValue> att5("o3_avg", o3AV_avg);
-  //  MinimalKeyValuePair <MinimalString, AttributeValue> att6("no2", no2AV);
-  //  MinimalKeyValuePair <MinimalString, AttributeValue> att7("so2", so2AV);
-  //  MinimalKeyValuePair <MinimalString, AttributeValue> att8("h2s", h2sAV);
-  MinimalKeyValuePair <MinimalString, AttributeValue> itemArray[17] = {att1, att2, att3, att4, att5, att6, att7, att8, att9, att10, att11, att12, att13, att14, att15, att16, att17};//, att18, att19,};// att20}; //, att4, .....
-
+  itemArray[0] = MinimalKeyValuePair <MinimalString, AttributeValue>(HASH_KEY_NAME, id);
+  itemArray[1] = MinimalKeyValuePair <MinimalString, AttributeValue>(RANGE_KEY_NAME, timest);
+  for(int i = 0; i < 15; i++){
+    itemArray[i + 2] = MinimalKeyValuePair <MinimalString, AttributeValue>(attributes_names[i], attributes[i]);
+  }
+  
   /* Set values for putItemInput. */
   putItemInput.setItem(MinimalMap < AttributeValue > (itemArray, 17)); // maximum attribute number, doesn't seem to be zero indexed??
   putItemInput.setTableName(TABLE_NAME);
 
   /* Perform putItem and check for errors. */
-  PutItemOutput putItemOutput = ddbClient.putItem(putItemInput,
-                                actionError);
+  PutItemOutput putItemOutput = ddbClient.putItem(putItemInput,actionError);
   switch (actionError) {
     //response codes simple, but unlikely to randomly occur in i/o stream, for atmega parsing
     case NONE_ACTIONERROR:
@@ -305,5 +287,6 @@ void postToAWS(bool not_dummy, bool verboz) {
       Serial.println("#E4");//("ERROR: Connection problem");
   }
 }
+
 
 
