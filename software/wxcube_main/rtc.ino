@@ -41,8 +41,7 @@ void rtc_read_timestamp(int mode)
   Wire.beginTransmission(RTC_ADDR);
   Wire.write((byte)0x00);
   if (Wire.endTransmission() != 0) {
-    Serial.println(F("no luck"));
-    //return false;
+    //Serial.println(F("no luck"));
   }
   else {
     //request 7 bytes (secs, min, hr, dow, date, mth, yr)

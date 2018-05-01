@@ -1,5 +1,5 @@
 //----------------PREAMBLE-----------------
-#define SERIAL_ID 17
+#define SERIAL_ID 11
 
 #define DEBUG_MODE 0
 #define DO_SEND_DATA true
@@ -21,11 +21,11 @@
 #define USE_COLUMN_SENSORS false
 
 int start_second = 0;
-int start_minute = 59;
-int start_hour = 21;
-int start_day_of_week = 5; //Sunday is 0, Saturday 7
-int start_day = 13;
-int start_month = 4;
+int start_minute = 57;
+int start_hour = 01;
+int start_day_of_week = 2; //Sunday is 0, Saturday 7
+int start_day = 1;
+int start_month = 5;
 int start_year = 18;
 
 int last_hour = -1;
@@ -60,6 +60,7 @@ bool _reset = false; // whether to reset eeprom; always rerun
 #define EEP_WRITE_LOCATION_INDEX 6// where we log where the counter is; keep rolling it over to conserve lifetime of eeprom memory
 #define START_WRITE_LOCATION 64 // 2nd page 
 #define MAX_MESSAGE_LENGTH 25
+#define ESP_MESSAGE_TERMINATOR "~"
 
 #define VDIV 5.02   //voltage divider: (1 + 4.02) / 1
 #define VREF 1.1    //value of ATMega328 internal reference voltage
@@ -187,10 +188,10 @@ void setup()
   ads.begin();
 
   //----------------set afe stuff-----------------------
-  set_afe(10, CO, 1); // (pin number, sensor type, index#)
-  set_afe(11, O3, 2);
-  set_afe(12, IAQ, 3);
-  set_afe(13, RESP, 4);
+  set_afe(10, O3, 1); // (pin number, sensor type, index#)
+  set_afe(11, H2S, 2);
+  set_afe(12, SO2, 3);
+  set_afe(13, NO2, 4);
 //O3,H2S,SO2,NO2
 /*set_afe(0, CO, 1); // (pin number, sensor type, index#)
   set_afe(1, O3, 2);
@@ -226,13 +227,15 @@ void loop() // run over and over
   Serial.println(++loop_counter);
 }
 
+void get_serial_id(){
+  //STUB
+}
+
 void acquire_data() {
   digitalWrite(VREF_EN, HIGH);
   //----------------fan on-----------------
   Serial.println(F("fan on"));
   if(!DEBUG_FAN_OFF){digitalWrite(FAN_EN, HIGH);} // delay(FAN_INTERVAL);
-  // turn fan off and wait for inductive coils to discharge
-  //digitalWrite(FAN_EN, LOW);  delay(2000);
   ////-----------take readings------------------
 
   Serial.println(F("Taking data..."));
@@ -315,12 +318,11 @@ void read_data()
     data_array[j] = stat[i++].unbiased_stdev();
   }
 
-  i = 0;
   rtc_read_timestamp(1); // updates integer_time
-  data_array[STAT_COUNT + ADC_CHANNEL_COUNT + i++] = scaler * analogRead(VOLT) / 1023.0 * VREF * VDIV;
-  data_array[STAT_COUNT + ADC_CHANNEL_COUNT + i++] = 100 * (integer_time[2]) + integer_time[1]; //hour minute
-  data_array[STAT_COUNT + ADC_CHANNEL_COUNT + i++] = integer_time[5] * 100 + integer_time[4]; //month day
-  data_array[STAT_COUNT + ADC_CHANNEL_COUNT + i++] = number_reads;
+  data_array[STAT_COUNT + ADC_CHANNEL_COUNT + 0] = scaler * analogRead(VOLT) / 1023.0 * VREF * VDIV;
+  data_array[STAT_COUNT + ADC_CHANNEL_COUNT + 1] = 100 * (integer_time[2]) + integer_time[1]; //hour minute
+  data_array[STAT_COUNT + ADC_CHANNEL_COUNT + 2] = integer_time[5] * 100 + integer_time[4]; //month day
+  data_array[STAT_COUNT + ADC_CHANNEL_COUNT + 3] = number_reads;
 }
 
 void process_data()
@@ -340,22 +342,22 @@ void process_data()
   // first case: eeprom write location less than size of 1st eepro
   if (eeprom_write_location < (1024.0 * 128.0 - 64.0)) {
     device = EEP0;
-    Serial.println("Device is EEP0");
+    Serial.println(F("Device is EEP0"));
   }
   // second case: eeprom write location needs to move to eeprom2
   else if (eeprom_write_location < (1024.0 * 128.0)) {
     device = EEP1;
     eeprom_write_location = 0;
-    Serial.println("Device is EEP1");
+    Serial.println(F("Device is EEP1"));
   }
   // third case: eeprom write location needs to move back to eeprom1
   else {
     device = EEP0;
     eeprom_write_location = 64;
-    Serial.println("Device is EEP0");
+    Serial.println(F("Device is EEP0"));
   }
 
-  Serial.print("write location is: ");
+  Serial.print(F("write location is: "));
   Serial.println(eeprom_write_location);
   
   Serial.print(F("from: "));
@@ -440,8 +442,7 @@ void process_data()
         Serial.println(F("Going back to sleep..."));
         delay(500);
         for (int i = 0; i < 30; i++) {  // go back to sleep for 4 minutes so we don't double send
-          LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
-                        SPI_OFF, USART0_OFF, TWI_OFF);
+          LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF, SPI_OFF, USART0_OFF, TWI_OFF);
         }
         writeEEPROM(EEP0, EEP_WRITE_LOCATION_INDEX, eeprom_write_location);
       //}

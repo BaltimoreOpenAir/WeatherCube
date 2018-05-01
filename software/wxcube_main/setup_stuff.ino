@@ -26,14 +26,20 @@ void test_post()
 {
   digitalWrite(WIFI_EN, HIGH);
   delay(2000);
+  mySerial.write("!");
+  mySerial.write(ESP_MESSAGE_TERMINATOR);
+  mySerial.flush();
+  delay(800);
+  
   long one_reading_array[EEPROM_BLOCKSIZE];
   memset(one_reading_array, 0, sizeof(one_reading_array));
   //// check serial messages
-  if (mySerial.available()) {
+  //if (mySerial.available()) {
     while (mySerial.available()) {
       Serial.write(mySerial.read());
+      delay(10);
     }
-  }
+  //}
   bool post_success =  false;
   int counter = 0;
   while (post_success == false && counter < MAX_POST_TRIES ) {
@@ -48,7 +54,7 @@ void test_post()
       else {
         s += String(one_reading_array[i]);
       }
-      s += "x";
+      s += ESP_MESSAGE_TERMINATOR;//"x";
       s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
       Serial.println(F("data to be posted is..."));
       Serial.println(s);
@@ -70,38 +76,51 @@ void test_post()
       }
       s += ",";
     }
-    s += "x";
+    s += ESP_MESSAGE_TERMINATOR;//"x";
     s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
     Serial.println(F("rest of data to be posted is..."));
     Serial.println(s);
-
-    char inbyte;
     mySerial.write(cbuf);
     mySerial.flush();
     delay(800);
-    mySerial.write("px");
+    mySerial.write("p");
+    mySerial.write(ESP_MESSAGE_TERMINATOR);
     mySerial.flush();
     Serial.println(F("Attempted post..."));
     delay(5000);
+    char inbyte;
     long toc = millis();
     //while (millis() - toc < 50000) {
     //int counter = 0;
     // while (counter < 25){
-    if (mySerial.available()) {
+    //if (mySerial.available()) {
       while (mySerial.available()) { // & counter < 50) {
-        inbyte = mySerial.read();
-        //Serial.write(mySerial.read());
-        Serial.write(inbyte);
-        delay(30);
-        if (inbyte == '#') {
+        inbyte = mySerial.read(); delay(20);
+        if(inbyte != '#'){
+          Serial.write(inbyte); delay(20);
+        }else{
+          //Serial.write(inbyte);
           inbyte = mySerial.read();
+          //Serial.write(inbyte);
           if (inbyte == 'S') {
             post_success = true;
-            Serial.println(F("post success!"));
+            Serial.println(F("POST SUCCESS!"));
+          }
+          else if(inbyte == 'E'){
+            inbyte = mySerial.read();
+            if(inbyte == '1'){
+              Serial.println(F("POST ERROR: Invalid request"));
+            }else if(inbyte == '2'){
+              Serial.println(F("POST ERROR: Required arguments were not set for PutItemInput"));
+            }else if(inbyte == '3'){
+              Serial.println(F("POST ERROR: Problem parsing http response of PutItem"));
+            }else{
+              Serial.println(F("POST ERROR: Connection problem"));
+            }
           }
         }
       }
-    }
+    //}
     counter = counter + 1;
     Serial.println(F("counter increasing to..."));
     Serial.println(counter);
@@ -109,6 +128,8 @@ void test_post()
 
 
   delay(5000);
+  mySerial.write("@");
+  mySerial.write(ESP_MESSAGE_TERMINATOR);
   long toc = millis();
   while (millis() - toc < 15000) {
     int counter = 0;
@@ -116,7 +137,7 @@ void test_post()
       while (mySerial.available()) { // & counter < 50) {
         Serial.write(mySerial.read());
         delay(500);
-        counter++ ;
+        ++counter;
       }
     }
   }

@@ -21,6 +21,11 @@ void send_data() {
   delay(2000);
   //long one_reading_array[EEPROM_BLOCKSIZE];
   bool post_success;
+
+  mySerial.write("!");
+  mySerial.write(ESP_MESSAGE_TERMINATOR);
+  mySerial.flush();
+  delay(800);
   //Serial.println(loop_counter);
   for (int reading_counter = unreported_reads; reading_counter > 0; reading_counter--) {
     //reading_counter = loop_counter;
@@ -68,7 +73,7 @@ void send_data() {
       else {
         s += String(one_reading_array[i]);
       }
-      s += "x";
+      s += ESP_MESSAGE_TERMINATOR;
       s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
       //Serial.println(F("data to be posted is..."));
       Serial.print(s);
@@ -90,7 +95,7 @@ void send_data() {
       }
       s += ",";
     }
-    s += "x";
+    s += ESP_MESSAGE_TERMINATOR;
     Serial.println(s);
     s.toCharArray(cbuf, MAX_MESSAGE_LENGTH);
     //Serial.println(F("rest of data to be posted is..."));
@@ -104,7 +109,8 @@ void send_data() {
     char inbyte;
     int number_tries = 0;
     while (post_success == false && number_tries < MAX_POST_TRIES) {
-      mySerial.write("px");
+      mySerial.write("p");
+      mySerial.write(ESP_MESSAGE_TERMINATOR);
       mySerial.flush();
       Serial.println(F("Attempted post..."));
       delay(5000);
@@ -143,5 +149,8 @@ void send_data() {
     writeEEPROM(EEP0, LOOP_COUNTER_LOCATION, loop_counter);
     // save loop_counter to memory
   }
+  mySerial.write("@");
+  mySerial.write(ESP_MESSAGE_TERMINATOR);
+  delay(1000);
   digitalWrite(WIFI_EN, LOW);
 }
