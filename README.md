@@ -13,7 +13,7 @@ This repo provides code and schematics for the WeatherCube, an environmental mon
 
 2- Charging controller: provides power to the main board, charge up the battery with the solar panel
 
-3- Lithium polymere battery: holds the power for the device
+3- Lithium polymer battery: holds the power for the device
 
 4- Analog front end board: holds the air quality sensors
 
